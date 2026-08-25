@@ -16,25 +16,34 @@ répondent donc pas au cas.
 
 ## Ce que fait le module
 
-1. **Un champ `analytic_distribution` en en-tête** de `account.move`,
-   `purchase.order` et `sale.order`. Il accepte une répartition en pourcentages
-   sur plusieurs comptes — le 60/40 sur deux chantiers — là où la cascade
-   native par projet ne pose qu'un seul compte à 100 %.
+**Un bouton « Imputer les lignes »** sur les factures, les commandes d'achat et
+les commandes de vente, réservé au groupe `analytic.group_analytic_accounting`.
+Il recopie une distribution analytique sur toutes les lignes de produit du
+document.
 
-2. **Un bouton « Appliquer à toutes les lignes »**, réservé au groupe
-   `analytic.group_analytic_accounting`, qui recopie cette distribution sur les
-   lignes de produit.
+- La distribution accepte une **répartition en pourcentages** sur plusieurs
+  comptes — le 60/40 sur deux chantiers — là où la cascade native par projet ne
+  pose qu'un seul compte à 100 %.
+- Les lignes de section, de sous-section et de note sont ignorées.
+- Sur une facture, les lignes de taxe, d'escompte, d'arrondi et la contrepartie
+  fournisseur sont ignorées : seules les lignes dont `display_type` vaut
+  `product` sont écrites.
+- **Dès qu'une ligne porte déjà une imputation**, un écran de confirmation
+  s'ouvre et annonce combien. Deux choix : *n'affecter que les lignes vides*
+  (défaut) ou *tout écraser*. Une ventilation manuelle ne disparaît jamais sans
+  que quelqu'un l'ait demandé.
+- Un compte analytique appartenant à une autre société que le document est
+  refusé. La base compte six sociétés et rien dans le widget ne l'empêche.
 
-   - Les lignes de section, de sous-section et de note sont ignorées.
-   - Sur une facture, les lignes de taxe, d'escompte, d'arrondi et la
-     contrepartie fournisseur sont ignorées : seules les lignes dont
-     `display_type` vaut `product` sont écrites.
-   - **Si au moins une ligne porte déjà une distribution différente**, un
-     écran de confirmation s'ouvre et annonce combien. Deux choix : *n'affecter
-     que les lignes vides* (défaut) ou *tout écraser*. Une ventilation
-     manuelle ne disparaît jamais sans que quelqu'un l'ait demandé.
-   - Un compte analytique appartenant à une autre société que le document est
-     refusé. La base compte six sociétés et rien dans le widget ne l'empêche.
+**Un champ `analytic_distribution` en en-tête des commandes** d'achat et de
+vente, et d'elles seules. Au moment de commander, on sait pour quel chantier on
+achète : le champ le conserve, et si aucune ligne n'est encore imputée, le
+bouton écrit directement sans rien demander. Il complète `project_id` sans le
+remplacer — laissé vide, le comportement natif reprend la main.
+
+**Sur une facture, il n'y a pas de champ d'en-tête**, et c'est délibéré : voir
+« Pourquoi pas de champ sur les factures » plus bas. La distribution s'y saisit
+dans l'écran de confirmation, qui s'ouvre donc à chaque fois.
 
 ## Ce que le module ne fait pas
 
@@ -87,6 +96,34 @@ général + chantier, mesure = montant), en gardant éventuellement la liste
 détaillée sur une seconde feuille. Manipulation Odoo Spreadsheet, une
 demi-heure.
 
+## Pourquoi pas de champ sur les factures
+
+Un champ `analytic_distribution` en en-tête d'`account.move` **fait planter
+l'écran**. Le widget se donne le focus en se rendant
+(`AnalyticDistribution.patched` → `focusToSelector` → `focus`), et le module
+Enterprise de numérisation des factures `account_invoice_extract` intercepte ce
+focus pour surligner la zone correspondante du document scanné. Il cherche le
+champ dans sa table de correspondance, ne l'y trouve pas, et lève :
+
+    TypeError: Cannot read properties of undefined (reading 'fields')
+        at InvoiceExtractFormRenderer.getBoxType
+
+Éprouvé le 25 août 2026 sur une staging **Odoo 19 Enterprise**. Le même champ en
+en-tête d'une commande d'achat ne pose aucun problème — les achats n'ont pas de
+numérisation. C'est donc bien l'interaction avec `account_invoice_extract`, pas
+le widget lui-même.
+
+D'où l'asymétrie : `purchase.order` et `sale.order` héritent en plus de
+`dfd.analytic.bulk.header.mixin`, qui porte le champ ; `account.move` n'hérite
+que de `dfd.analytic.bulk.mixin`, qui ne porte aucun champ. Deux tests
+verrouillent cette décision — `test_invoice_carries_no_header_field` et
+`test_orders_carry_the_header_field`. **Si l'asymétrie vous paraît bizarre dans
+deux ans, c'est ce paragraphe qu'il faut relire avant de la corriger.**
+
+Bénéfice secondaire : `account.move` n'acquiert ni colonne, ni index GIN, ni
+table de relation. Le module se désinstalle sans laisser la moindre trace sur
+les factures.
+
 ## Un écart assumé avec la spécification
 
 La spécification demandait de « laisser remonter l'erreur standard d'Odoo » sur
@@ -110,7 +147,8 @@ n'est pas ce que veut Deliso, la bascule tient en une méthode —
 
     odoo-bin -d <base> -i dfd_analytic_bulk --test-enable --test-tags /dfd_analytic_bulk
 
-Couvre : lignes vides seulement, écrasement total, répartition en pourcentages,
+18 tests. Couvrent : absence du champ sur les factures et présence sur les
+commandes, lignes vides seulement, écrasement total, répartition en pourcentages,
 exclusion des sections et notes, exclusion des lignes de taxe et de la
 contrepartie, refus sur période verrouillée, tolérance sur pièce brouillon,
 isolation multi-sociétés, compte analytique sans société, commandes d'achat et
