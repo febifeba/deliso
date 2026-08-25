@@ -21,6 +21,12 @@ les commandes de vente, réservé au groupe `analytic.group_analytic_accounting`
 Il recopie une distribution analytique sur toutes les lignes de produit du
 document.
 
+Il est **toujours visible**, même quand rien n'est encore saisi. Le masquer tant
+que l'en-tête est vide paraissait propre, et rendait la fonction introuvable à
+qui ne la connaissait pas déjà : sur une commande, personne ne devine qu'il faut
+d'abord remplir un champ pour faire apparaître un bouton. Sans distribution à
+recopier, le bouton ouvre simplement l'écran qui la demande.
+
 - La distribution accepte une **répartition en pourcentages** sur plusieurs
   comptes — le 60/40 sur deux chantiers — là où la cascade native par projet ne
   pose qu'un seul compte à 100 %.
