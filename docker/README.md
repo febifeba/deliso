@@ -82,8 +82,32 @@ pas encore : sa liste d'applications date de la création de la base.
 
 Sans elle, le champ et le bouton du module n'apparaissent nulle part.
 
-Comptabilité → Configuration → Paramètres → section *Analytique* → cocher
-**Comptabilité analytique**, puis *Enregistrer*.
+**Et sur ce banc, la case n'existe pas.** Le bloc *Analytique* des paramètres
+est réservé au groupe `account.group_account_user` (« Show Full Accounting
+Features »), qu'apporte `account_accountant` — un module **Enterprise**. En
+Community on n'a que la Facturation : personne ne possède ce groupe, donc
+personne ne voit la case. Le rôle *Administrateur* de la comptabilité n'aide
+pas : il n'implique que *Invoicing*.
+
+Chez un client en Enterprise — Deliso est en 19.0+e — la case est là et il
+suffit de la cocher. Ici, on pose le groupe directement :
+
+```bash
+docker compose exec -T odoo odoo shell -d deliso \
+  --db_host=db --db_user=odoo --db_password=odoo \
+  --no-http --log-level=error <<'EOF'
+u = env.ref('base.user_admin')
+u.group_ids |= env.ref('analytic.group_analytic_accounting')
+env.cr.commit()
+print("groupe analytique posé sur", u.login)
+EOF
+```
+
+Les trois `--db_*` sont nécessaires : `docker compose exec` court-circuite le
+script d'entrée de l'image, celui qui transmet d'habitude les paramètres de
+connexion. Sans eux, Odoo cherche la base sur `localhost` dans le conteneur.
+
+Recharger ensuite la page Odoo pour que la session relise les groupes.
 
 Créer ensuite un plan analytique et deux ou trois comptes, qui tiendront lieu
 de chantiers : Comptabilité → Configuration → *Plans analytiques*, puis
