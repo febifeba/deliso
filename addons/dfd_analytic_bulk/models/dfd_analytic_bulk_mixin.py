@@ -2,33 +2,34 @@
 from odoo import _, models
 from odoo.exceptions import UserError
 
-# Les seuls modèles autorisés à porter une distribution analytique d'en-tête.
-# Le wizard s'y réfère pour refuser tout autre res_model : un oubli ferme, il
-# n'ouvre pas.
+# Les seuls modèles autorisés à porter le bouton. Le wizard s'y réfère pour
+# refuser tout autre res_model : un oubli ferme, il n'ouvre pas.
 ALLOWED_MODELS = ('account.move', 'purchase.order', 'sale.order')
 
 
 class DfdAnalyticBulkMixin(models.AbstractModel):
-    """Une distribution analytique posée en en-tête, appliquée d'un geste aux lignes.
+    """Appliquer une distribution analytique à toutes les lignes d'un document.
 
-    Le champ ``analytic_distribution`` vient de ``analytic.mixin``. Il n'a
-    aucun effet comptable propre : rien ne le lit hors le bouton ci-dessous.
-    Pas de surcharge de ``_post``, pas de surcharge du moteur analytique, pas
-    de champ stocké ajouté sur les lignes.
+    Ce mixin ne porte AUCUN champ. C'est délibéré : sur ``account.move``, un
+    champ ``analytic_distribution`` en en-tête fait planter l'écran. Le widget
+    se donne le focus en se rendant, et le module Enterprise de numérisation
+    des factures (``account_invoice_extract``) intercepte ce focus pour
+    surligner la zone correspondante du document scanné — il cherche le champ
+    dans sa table de correspondance, ne l'y trouve pas, et lève un
+    « Cannot read properties of undefined (reading 'fields') ».
+
+    Éprouvé le 25 août 2026 sur une staging Odoo 19 Enterprise : le même champ
+    en en-tête d'une commande d'achat ne pose aucun problème — les achats
+    n'ont pas de numérisation. C'est donc bien l'interaction avec
+    ``account_invoice_extract``, pas le widget lui-même.
+
+    Les modèles qui peuvent porter le champ sans risque héritent en plus de
+    ``dfd.analytic.bulk.header.mixin``. Sur une facture, la distribution se
+    saisit dans l'assistant.
     """
 
     _name = 'dfd.analytic.bulk.mixin'
-    _inherit = ['analytic.mixin']
-    _description = "Header Analytic Distribution"
-
-    def _compute_analytic_distribution(self):
-        # ``analytic.mixin`` déclare le champ calculé-modifiable et laisse aux
-        # modèles concrets le soin de le remplir. Ici il n'y a rien à déduire :
-        # un en-tête ne se devine pas, il se saisit. On réassigne la valeur
-        # existante pour que le calcul soit défini — c'est ce que fait déjà
-        # ``purchase.order.line._compute_analytic_distribution``.
-        for record in self:
-            record.analytic_distribution = record.analytic_distribution
+    _description = "Bulk Analytic Allocation"
 
     # ------------------------------------------------------------------
     # À redéfinir par chaque modèle
@@ -49,69 +50,79 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
         """Garde-fou propre au modèle, appelé avant toute écriture."""
         return
 
+    def _dfd_header_distribution(self):
+        """La distribution posée en en-tête, quand le modèle en porte une.
+
+        Vide ici : l'assistant la demandera.
+        """
+        return False
+
     # ------------------------------------------------------------------
     # Le bouton
     # ------------------------------------------------------------------
 
     def action_dfd_apply_analytic(self):
-        """Appliquer la distribution d'en-tête aux lignes de produit.
+        """Appliquer une distribution analytique aux lignes de produit.
 
-        Si aucune ligne ne porte déjà autre chose, on écrit directement. Sinon
-        on ouvre le wizard : une ventilation manuelle ne s'écrase jamais sans
-        que quelqu'un l'ait demandé.
+        Chemin direct — écrire sans rien demander — seulement quand l'en-tête
+        porte déjà la distribution ET qu'aucune ligne n'est imputée. Dans tous
+        les autres cas l'assistant s'ouvre : soit il manque la distribution,
+        soit du travail manuel est en jeu et ne s'écrase pas en silence.
         """
         self.ensure_one()
-        self._dfd_check_analytic_ready()
+        self._dfd_check_writable()
+
         lines = self._dfd_analytic_target_lines()
         if not lines:
             raise UserError(_("This document has no product line to allocate."))
 
-        conflicts = lines.filtered(
-            lambda line: line.analytic_distribution
-            and line.analytic_distribution != self.analytic_distribution
-        )
-        if conflicts:
-            return self._dfd_open_apply_wizard(len(lines), len(conflicts))
-        return self._dfd_apply_analytic(mode='overwrite')
+        distribution = self._dfd_header_distribution()
+        already_filled = lines.filtered(lambda line: line.analytic_distribution)
 
-    def _dfd_apply_analytic(self, mode='empty'):
-        """Écrire la distribution d'en-tête. Appelé par le bouton et le wizard."""
+        if distribution and not already_filled:
+            return self._dfd_apply_analytic(distribution, mode='overwrite')
+        return self._dfd_open_apply_wizard(distribution, len(lines), len(already_filled))
+
+    def _dfd_apply_analytic(self, distribution, mode='empty'):
+        """Écrire la distribution. Appelé par le bouton et par l'assistant."""
         self.ensure_one()
-        self._dfd_check_analytic_ready()
+        if not distribution:
+            raise UserError(_("Choose an analytic distribution first."))
+        self._dfd_check_analytic_company(distribution)
+        self._dfd_check_writable()
+
         lines = self._dfd_analytic_target_lines()
         if mode == 'empty':
             lines = lines.filtered(lambda line: not line.analytic_distribution)
         # Une ligne qui porte déjà exactement la même distribution n'est pas
         # réécrite : chaque écriture fait retirer puis recréer ses écritures
         # analytiques par _inverse_analytic_distribution.
-        lines = lines.filtered(
-            lambda line: line.analytic_distribution != self.analytic_distribution
-        )
+        lines = lines.filtered(lambda line: line.analytic_distribution != distribution)
         if lines:
-            lines.write({'analytic_distribution': self.analytic_distribution})
+            lines.write({'analytic_distribution': distribution})
         return self._dfd_applied_notification(len(lines))
 
     # ------------------------------------------------------------------
     # Contrôles
     # ------------------------------------------------------------------
 
-    def _dfd_check_analytic_ready(self):
-        self.ensure_one()
-        if not self.analytic_distribution:
-            raise UserError(_("Set the analytic distribution in the header first."))
-        self._dfd_check_analytic_company()
-        self._dfd_check_writable()
+    def _dfd_check_analytic_company(self, distribution):
+        """Un compte analytique d'une autre société n'a rien à faire ici.
 
-    def _dfd_check_analytic_company(self):
-        """Un compte analytique d'une autre société n'a rien à faire sur ces lignes.
-
-        La base compte six sociétés ; rien dans le widget n'empêche de choisir
-        le compte de la voisine.
+        La base de Deliso compte six sociétés ; rien dans le widget n'empêche
+        de choisir le compte de la voisine.
         """
         self.ensure_one()
-        account_ids = self._get_analytic_account_ids_from_distributions(
-            self.analytic_distribution
-        )
+        # Une clé de distribution est un ou plusieurs identifiants de compte
+        # joints par des virgules — un par plan analytique. Odoo sait les lire
+        # (analytic.mixin._get_analytic_account_ids_from_distributions), mais
+        # cette méthode vit sur le mixin, qu'account.move ne porte plus.
+        account_ids = {
+            int(fragment)
+            for key in (distribution or {})
+            for fragment in str(key).split(',')
+            if fragment.isdigit()
+        }
         accounts = self.env['account.analytic.account'].browse(sorted(account_ids)).exists()
         foreign = accounts.filtered(
             lambda account: account.company_id and account.company_id != self.company_id
@@ -127,16 +138,17 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
     # Retours d'écran
     # ------------------------------------------------------------------
 
-    def _dfd_open_apply_wizard(self, line_count, conflict_count):
+    def _dfd_open_apply_wizard(self, distribution, line_count, conflict_count):
         wizard = self.env['dfd.analytic.bulk.apply'].create({
             'res_model': self._name,
             'res_id': self.id,
             'line_count': line_count,
             'conflict_count': conflict_count,
+            'analytic_distribution': distribution or False,
         })
         return {
             'type': 'ir.actions.act_window',
-            'name': _("Apply analytic distribution"),
+            'name': _("Allocate lines to analytic accounts"),
             'res_model': 'dfd.analytic.bulk.apply',
             'res_id': wizard.id,
             'view_mode': 'form',

@@ -16,13 +16,18 @@ msgstr ""
 
 #. module: dfd_analytic_bulk
 #: model:ir.model,name:dfd_analytic_bulk.model_dfd_analytic_bulk_mixin
+msgid "Bulk Analytic Allocation"
+msgstr "Imputation analytique en masse"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model,name:dfd_analytic_bulk.model_dfd_analytic_bulk_header_mixin
 msgid "Header Analytic Distribution"
 msgstr "Distribution analytique en en-tête"
 
 #. module: dfd_analytic_bulk
 #: model:ir.model,name:dfd_analytic_bulk.model_dfd_analytic_bulk_apply
-msgid "Apply Analytic Distribution to Lines"
-msgstr "Appliquer la distribution analytique aux lignes"
+msgid "Allocate Lines to Analytic Accounts"
+msgstr "Imputer les lignes aux comptes analytiques"
 
 #. module: dfd_analytic_bulk
 #: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__res_model
@@ -61,13 +66,13 @@ msgstr "Écraser toutes les lignes"
 
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
-msgid "Set the analytic distribution in the header first."
-msgstr "Renseignez d'abord la distribution analytique en en-tête."
+msgid "This document has no product line to allocate."
+msgstr "Ce document n'a aucune ligne de produit à imputer."
 
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
-msgid "This document has no product line to allocate."
-msgstr "Ce document n'a aucune ligne de produit à imputer."
+msgid "Choose an analytic distribution first."
+msgstr "Choisissez d'abord une distribution analytique."
 
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
@@ -76,8 +81,8 @@ msgstr "Ces comptes analytiques appartiennent à une autre société que %(compa
 
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
-msgid "Apply analytic distribution"
-msgstr "Appliquer la distribution analytique"
+msgid "Allocate lines to analytic accounts"
+msgstr "Imputer les lignes aux comptes analytiques"
 
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
@@ -87,11 +92,16 @@ msgstr "Distribution analytique appliquée à %(count)s ligne(s)."
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
 msgid ""
-"%(conflicts)s of the %(total)s product lines already carry a different "
-"analytic distribution. What should be done with them?"
+"%(conflicts)s of the %(total)s product lines are already allocated. What "
+"should be done with them?"
 msgstr ""
-"%(conflicts)s des %(total)s lignes de produit portent déjà une distribution "
-"analytique différente. Qu'en faire ?"
+"%(conflicts)s des %(total)s lignes de produit sont déjà imputées. Qu'en "
+"faire ?"
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
+msgid "The analytic distribution will be applied to the %(total)s product lines."
+msgstr "La distribution analytique sera appliquée aux %(total)s lignes de produit."
 
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
@@ -100,15 +110,15 @@ msgstr "Vous n'avez pas accès à la comptabilité analytique."
 
 #. module: dfd_analytic_bulk
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
-msgid "Model %s does not carry a header analytic distribution."
-msgstr "Le modèle %s ne porte pas de distribution analytique en en-tête."
+msgid "Model %s does not support bulk analytic allocation."
+msgstr "Le modèle %s ne gère pas l'imputation analytique en masse."
 
 #. module: dfd_analytic_bulk
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_move_form_dfd_analytic
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.purchase_order_form_dfd_analytic
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_order_form_dfd_analytic
-msgid "Apply to all lines"
-msgstr "Appliquer à toutes les lignes"
+msgid "Allocate lines"
+msgstr "Imputer les lignes"
 
 #. module: dfd_analytic_bulk
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.dfd_analytic_bulk_apply_form

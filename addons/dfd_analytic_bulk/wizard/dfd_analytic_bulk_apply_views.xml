@@ -4,16 +4,23 @@
         <field name="name">dfd.analytic.bulk.apply.form</field>
         <field name="model">dfd.analytic.bulk.apply</field>
         <field name="arch" type="xml">
-            <form string="Apply analytic distribution">
+            <form string="Allocate lines to analytic accounts">
                 <field name="res_model" invisible="1"/>
                 <field name="res_id" invisible="1"/>
                 <field name="line_count" invisible="1"/>
                 <field name="conflict_count" invisible="1"/>
-                <div class="alert alert-warning" role="alert">
+                <div class="alert alert-info" role="alert" invisible="conflict_count">
+                    <field name="message" nolabel="1" readonly="1"/>
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="not conflict_count">
                     <field name="message" nolabel="1" readonly="1"/>
                 </div>
                 <group>
-                    <field name="mode" widget="radio" nolabel="1"/>
+                    <field name="analytic_distribution"
+                           widget="analytic_distribution"
+                           required="1"
+                           options="{'business_domain': 'general'}"/>
+                    <field name="mode" widget="radio" invisible="not conflict_count"/>
                 </group>
                 <footer>
                     <button name="action_apply" type="object" string="Apply" class="btn-primary"/>

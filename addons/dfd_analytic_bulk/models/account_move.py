@@ -6,6 +6,11 @@ class AccountMove(models.Model):
     _name = 'account.move'
     _inherit = ['account.move', 'dfd.analytic.bulk.mixin']
 
+    # Volontairement PAS dfd.analytic.bulk.header.mixin : un champ
+    # analytic_distribution en en-tête de facture fait planter l'écran dès
+    # qu'il prend le focus, quand account_invoice_extract est installé.
+    # La distribution se saisit dans l'assistant.
+
     def _dfd_analytic_target_lines(self):
         # Sur account.move.line, une ligne de produit porte display_type
         # 'product'. Les lignes de taxe ('tax'), de contrepartie

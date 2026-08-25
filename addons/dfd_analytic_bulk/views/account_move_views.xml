@@ -1,23 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Pas de champ analytic_distribution en en-tête de facture : le widget
+         se donne le focus en se rendant, et account_invoice_extract plante en
+         cherchant ce champ inconnu dans sa table de correspondance. Le bouton
+         ouvre l'assistant, qui porte le champ dans sa propre fenêtre. -->
     <record id="view_move_form_dfd_analytic" model="ir.ui.view">
         <field name="name">account.move.form.dfd.analytic.bulk</field>
         <field name="model">account.move</field>
         <field name="inherit_id" ref="account.view_move_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//group[@id='header_right_group']" position="inside">
-                <field name="analytic_distribution"
-                       widget="analytic_distribution"
-                       groups="analytic.group_analytic_accounting"
-                       invisible="move_type == 'entry'"
-                       business_domain_compute="move_type in ['out_invoice', 'out_refund', 'out_receipt'] and 'invoice' or move_type in ['in_invoice', 'in_refund', 'in_receipt'] and 'bill' or 'general'"/>
-            </xpath>
             <xpath expr="//header" position="inside">
                 <button name="action_dfd_apply_analytic"
                         type="object"
-                        string="Apply to all lines"
+                        string="Allocate lines"
                         groups="analytic.group_analytic_accounting"
-                        invisible="move_type == 'entry' or not analytic_distribution"/>
+                        invisible="move_type == 'entry'"/>
             </xpath>
         </field>
     </record>

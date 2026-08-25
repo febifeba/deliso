@@ -4,7 +4,7 @@ from odoo import models
 
 class PurchaseOrder(models.Model):
     _name = 'purchase.order'
-    _inherit = ['purchase.order', 'dfd.analytic.bulk.mixin']
+    _inherit = ['purchase.order', 'dfd.analytic.bulk.header.mixin']
 
     def _dfd_analytic_target_lines(self):
         # Sur purchase.order.line, display_type ne vaut quelque chose que pour
