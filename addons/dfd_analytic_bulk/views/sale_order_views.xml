@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_dfd_analytic" model="ir.ui.view">
+        <field name="name">sale.order.form.dfd.analytic.bulk</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='validity_date']" position="after">
+                <field name="analytic_distribution"
+                       widget="analytic_distribution"
+                       groups="analytic.group_analytic_accounting"
+                       options="{'business_domain': 'sale_order'}"/>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_dfd_apply_analytic"
+                        type="object"
+                        string="Apply to all lines"
+                        groups="analytic.group_analytic_accounting"
+                        invisible="not analytic_distribution"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
