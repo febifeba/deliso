@@ -10,7 +10,7 @@
                        widget="analytic_distribution"
                        groups="analytic.group_analytic_accounting"
                        invisible="move_type == 'entry'"
-                       options="{'business_domain': 'general'}"/>
+                       business_domain_compute="move_type in ['out_invoice', 'out_refund', 'out_receipt'] and 'invoice' or move_type in ['in_invoice', 'in_refund', 'in_receipt'] and 'bill' or 'general'"/>
             </xpath>
             <xpath expr="//header" position="inside">
                 <button name="action_dfd_apply_analytic"

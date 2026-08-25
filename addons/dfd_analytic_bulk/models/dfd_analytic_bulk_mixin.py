@@ -81,6 +81,12 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
         lines = self._dfd_analytic_target_lines()
         if mode == 'empty':
             lines = lines.filtered(lambda line: not line.analytic_distribution)
+        # Une ligne qui porte déjà exactement la même distribution n'est pas
+        # réécrite : chaque écriture fait retirer puis recréer ses écritures
+        # analytiques par _inverse_analytic_distribution.
+        lines = lines.filtered(
+            lambda line: line.analytic_distribution != self.analytic_distribution
+        )
         if lines:
             lines.write({'analytic_distribution': self.analytic_distribution})
         return self._dfd_applied_notification(len(lines))

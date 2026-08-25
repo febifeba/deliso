@@ -12,16 +12,24 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.env.user.group_ids |= cls.env.ref('analytic.group_analytic_accounting')
+        cls.env.user.group_ids |= (
+            cls.env.ref('analytic.group_analytic_accounting')
+            | cls.env.ref('sales_team.group_sale_salesman')
+            | cls.env.ref('purchase.group_purchase_user')
+        )
 
         cls.plan = cls.env['account.analytic.plan'].create({'name': "Chantiers"})
+        # company_id porte une valeur par defaut ; les chantiers de Deliso sont
+        # partages entre les six societes, donc sans societe.
         cls.site_a = cls.env['account.analytic.account'].create({
             'name': "BULLANGE - LOT 1",
             'plan_id': cls.plan.id,
+            'company_id': False,
         })
         cls.site_b = cls.env['account.analytic.account'].create({
             'name': "BURG-REULAND LOT 16",
             'plan_id': cls.plan.id,
+            'company_id': False,
         })
         cls.dist_a = {str(cls.site_a.id): 100}
         cls.dist_b = {str(cls.site_b.id): 100}
@@ -214,9 +222,9 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             'partner_id': self.partner_a.id,
             'order_line': [
                 Command.create({'product_id': self.product_a.id, 'product_qty': 1}),
-                Command.create({'display_type': 'line_section', 'name': "Toiture"}),
+                Command.create({'display_type': 'line_section', 'name': "Toiture", 'product_qty': 0}),
                 Command.create({'product_id': self.product_b.id, 'product_qty': 2}),
-                Command.create({'display_type': 'line_note', 'name': "Livraison lundi"}),
+                Command.create({'display_type': 'line_note', 'name': "Livraison lundi", 'product_qty': 0}),
             ],
         })
         order.analytic_distribution = self.dist_a
@@ -234,7 +242,7 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             'partner_id': self.partner_a.id,
             'order_line': [
                 Command.create({'product_id': self.product_a.id, 'product_uom_qty': 1}),
-                Command.create({'display_type': 'line_note', 'name': "Devis validé par téléphone"}),
+                Command.create({'display_type': 'line_note', 'name': "Devis validé par téléphone", 'product_uom_qty': 0}),
             ],
         })
         order.analytic_distribution = self.dist_a
