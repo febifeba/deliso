@@ -15,8 +15,7 @@
                 <button name="action_dfd_apply_analytic"
                         type="object"
                         string="Allocate lines"
-                        groups="analytic.group_analytic_accounting"
-                        invisible="not analytic_distribution"/>
+                        groups="analytic.group_analytic_accounting"/>
             </xpath>
         </field>
     </record>

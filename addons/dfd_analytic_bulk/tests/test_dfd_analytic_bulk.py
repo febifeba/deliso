@@ -255,6 +255,29 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         self.assertEqual(order.order_line[0].analytic_distribution, self.dist_b)
         self.assertEqual(order.order_line[1].analytic_distribution, self.dist_a)
 
+    def test_purchase_order_without_header_opens_the_wizard(self):
+        # Le bouton s'affiche même en-tête vide : le masquer rendait la
+        # fonction invisible à qui ne la connaissait pas déjà. Sans
+        # distribution à recopier, l'assistant la demande.
+        order = self.env['purchase.order'].create({
+            'partner_id': self.partner_a.id,
+            'order_line': [
+                Command.create({'product_id': self.product_a.id, 'product_qty': 1}),
+                Command.create({'product_id': self.product_b.id, 'product_qty': 2}),
+            ],
+        })
+        self.assertFalse(order.analytic_distribution)
+
+        wizard = self._wizard_for(order)
+
+        self.assertFalse(wizard.analytic_distribution)
+        self.assertFalse(wizard.conflict_count)
+        wizard.analytic_distribution = self.dist_a
+        wizard.action_apply()
+
+        for line in order.order_line:
+            self.assertEqual(line.analytic_distribution, self.dist_a)
+
     def test_sale_order_skips_sections_and_notes(self):
         order = self.env['sale.order'].create({
             'partner_id': self.partner_a.id,
