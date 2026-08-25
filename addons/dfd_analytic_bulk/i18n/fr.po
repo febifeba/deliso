@@ -1,0 +1,121 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* dfd_analytic_bulk
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model,name:dfd_analytic_bulk.model_dfd_analytic_bulk_mixin
+msgid "Header Analytic Distribution"
+msgstr "Distribution analytique en en-tête"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model,name:dfd_analytic_bulk.model_dfd_analytic_bulk_apply
+msgid "Apply Analytic Distribution to Lines"
+msgstr "Appliquer la distribution analytique aux lignes"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__res_model
+msgid "Document Model"
+msgstr "Modèle du document"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__res_id
+msgid "Document"
+msgstr "Document"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__line_count
+msgid "Product Lines"
+msgstr "Lignes de produit"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__conflict_count
+msgid "Lines Already Allocated"
+msgstr "Lignes déjà imputées"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__mode
+msgid "Scope"
+msgstr "Portée"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields.selection,name:dfd_analytic_bulk.selection__dfd_analytic_bulk_apply__mode__empty
+msgid "Only fill in the empty lines"
+msgstr "N'affecter que les lignes vides"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields.selection,name:dfd_analytic_bulk.selection__dfd_analytic_bulk_apply__mode__overwrite
+msgid "Overwrite every line"
+msgstr "Écraser toutes les lignes"
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+msgid "Set the analytic distribution in the header first."
+msgstr "Renseignez d'abord la distribution analytique en en-tête."
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+msgid "This document has no product line to allocate."
+msgstr "Ce document n'a aucune ligne de produit à imputer."
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+msgid "These analytic accounts belong to another company than %(company)s: %(accounts)s"
+msgstr "Ces comptes analytiques appartiennent à une autre société que %(company)s : %(accounts)s"
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+msgid "Apply analytic distribution"
+msgstr "Appliquer la distribution analytique"
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+msgid "Analytic distribution applied to %(count)s line(s)."
+msgstr "Distribution analytique appliquée à %(count)s ligne(s)."
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
+msgid ""
+"%(conflicts)s of the %(total)s product lines already carry a different "
+"analytic distribution. What should be done with them?"
+msgstr ""
+"%(conflicts)s des %(total)s lignes de produit portent déjà une distribution "
+"analytique différente. Qu'en faire ?"
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
+msgid "You are not allowed to manage analytic accounting."
+msgstr "Vous n'avez pas accès à la comptabilité analytique."
+
+#. module: dfd_analytic_bulk
+#: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
+msgid "Model %s does not carry a header analytic distribution."
+msgstr "Le modèle %s ne porte pas de distribution analytique en en-tête."
+
+#. module: dfd_analytic_bulk
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_move_form_dfd_analytic
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.purchase_order_form_dfd_analytic
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_order_form_dfd_analytic
+msgid "Apply to all lines"
+msgstr "Appliquer à toutes les lignes"
+
+#. module: dfd_analytic_bulk
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.dfd_analytic_bulk_apply_form
+msgid "Apply"
+msgstr "Appliquer"
+
+#. module: dfd_analytic_bulk
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.dfd_analytic_bulk_apply_form
+msgid "Cancel"
+msgstr "Annuler"
