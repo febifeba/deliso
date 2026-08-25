@@ -30,6 +30,18 @@ msgid "Allocate Lines to Analytic Accounts"
 msgstr "Imputer les lignes aux comptes analytiques"
 
 #. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__analytic_distribution
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_purchase_order__analytic_distribution
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_sale_order__analytic_distribution
+msgid "Analytic Distribution"
+msgstr "Distribution analytique"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__message
+msgid "Message"
+msgstr "Message"
+
+#. module: dfd_analytic_bulk
 #: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__res_model
 msgid "Document Model"
 msgstr "Modèle du document"
@@ -65,31 +77,37 @@ msgid "Overwrite every line"
 msgstr "Écraser toutes les lignes"
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
 msgid "This document has no product line to allocate."
 msgstr "Ce document n'a aucune ligne de produit à imputer."
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
 msgid "Choose an analytic distribution first."
 msgstr "Choisissez d'abord une distribution analytique."
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
 msgid "These analytic accounts belong to another company than %(company)s: %(accounts)s"
 msgstr "Ces comptes analytiques appartiennent à une autre société que %(company)s : %(accounts)s"
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
 msgid "Allocate lines to analytic accounts"
 msgstr "Imputer les lignes aux comptes analytiques"
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
 msgid "Analytic distribution applied to %(count)s line(s)."
 msgstr "Distribution analytique appliquée à %(count)s ligne(s)."
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
 msgid ""
 "%(conflicts)s of the %(total)s product lines are already allocated. What "
@@ -99,16 +117,19 @@ msgstr ""
 "faire ?"
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
 msgid "The analytic distribution will be applied to the %(total)s product lines."
 msgstr "La distribution analytique sera appliquée aux %(total)s lignes de produit."
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
 msgid "You are not allowed to manage analytic accounting."
 msgstr "Vous n'avez pas accès à la comptabilité analytique."
 
 #. module: dfd_analytic_bulk
+#. odoo-python
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
 msgid "Model %s does not support bulk analytic allocation."
 msgstr "Le modèle %s ne gère pas l'imputation analytique en masse."

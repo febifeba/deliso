@@ -2,7 +2,7 @@
 {
     "name": "dFd Analytic Bulk",
     "summary": "Allocate every product line of a document to analytic accounts at once",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.2.1",
     "category": "Accounting",
     "author": "dFd",
     "license": "LGPL-3",

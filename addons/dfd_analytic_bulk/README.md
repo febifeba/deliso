@@ -177,7 +177,40 @@ contrepartie, refus sur période verrouillée, tolérance sur pièce brouillon,
 isolation multi-sociétés, compte analytique sans société, commandes d'achat et
 de vente, refus d'un modèle non listé par le wizard.
 
-## Un piège, si le module bouge
+## Deux pièges, si le module bouge
+
+### Les traductions de code exigent `#. odoo-python`
+
+Une entrée de `i18n/fr.po` n'est retenue comme traduction Python que si ses
+**commentaires** portent la ligne `#. odoo-python` :
+
+```
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
+msgid "You are not allowed to manage analytic accounting."
+msgstr "Vous n'avez pas accès à la comptabilité analytique."
+```
+
+La référence `#: code:…` ne suffit pas : `CodeTranslations._load_python_translations`
+filtre sur ce commentaire et sur lui seul. Sans lui, l'entrée est écartée **en
+silence** — pas d'erreur, pas d'avertissement, juste une chaîne qui reste en
+anglais à l'écran alors que les libellés de champs, eux, sont bien traduits.
+C'est ce qui est arrivé le 25 août 2026, et ça ne se voit qu'à l'usage.
+
+Les libellés de champs et les noms de modèles n'en ont pas besoin : ils passent
+par la base, pas par ce filtre.
+
+Autre chose à ne pas oublier : **le libellé d'un champ hérité n'est pas traduit
+pour autant.** `analytic_distribution` vient d'`analytic.mixin`, qu'Odoo traduit
+pour ses propres modèles — pas pour les nôtres. Il faut une entrée
+`field_<modèle>__analytic_distribution` par modèle qui le porte.
+
+Enfin, une correction de traduction ne prend effet qu'à la **mise à jour du
+module**, pas à un simple redémarrage.
+
+### `display_type` se lit à l'envers selon le modèle
+
 
 `display_type` ne se lit pas pareil d'un modèle à l'autre :
 
