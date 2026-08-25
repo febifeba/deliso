@@ -1,0 +1,45 @@
+# Odoo 19.0 en local, pour développer et éprouver les modules de ce dépôt.
+#
+# L'image officielle odoo:19.0 existe en arm64 natif : sur un Mac Apple
+# Silicon elle tourne sans émulation.
+#
+# Les modules du dépôt sont montés dans /mnt/extra-addons, que l'image
+# officielle place déjà dans son chemin d'addons — rien d'autre à configurer.
+
+name: deliso-odoo19
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # Odoo abandonne s'il démarre avant que PostgreSQL accepte les
+      # connexions ; on le fait attendre plutôt que de le redémarrer à la main.
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  odoo:
+    image: odoo:19.0
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ../addons:/mnt/extra-addons:ro
+
+volumes:
+  db-data:
+  odoo-data:
