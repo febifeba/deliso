@@ -124,6 +124,14 @@ Bénéfice secondaire : `account.move` n'acquiert ni colonne, ni index GIN, ni
 table de relation. Le module se désinstalle sans laisser la moindre trace sur
 les factures.
 
+**Le détour par l'assistant est éprouvé**, le 25 août 2026, sur la même staging
+Odoo 19 Enterprise : le bouton s'affiche, l'assistant s'ouvre et applique, sans
+la moindre erreur. Le module de numérisation greffe son intercepteur sur le
+formulaire de facture, pas sur les boîtes de dialogue — le widget y est donc
+hors de portée. Bénéfice constaté au passage : une fois le champ d'en-tête
+retiré, **la saisie analytique standard ligne par ligne refonctionne**, alors
+qu'elle cassait aussi tant que le champ était là.
+
 ## Un écart assumé avec la spécification
 
 La spécification demandait de « laisser remonter l'erreur standard d'Odoo » sur
@@ -144,6 +152,15 @@ n'est pas ce que veut Deliso, la bascule tient en une méthode —
 `_dfd_check_writable` dans `models/account_move.py`.
 
 ## Tests
+
+Éprouvé deux fois, et les deux comptent :
+
+- **Odoo 19.0 Community**, en local — la suite automatique ci-dessous.
+- **Odoo 19.0 Enterprise**, sur une staging odoo.sh, le 25 août 2026 — à la
+  main, parce que `account_invoice_extract` est un module Enterprise que le
+  banc local ne peut pas installer. C'est là et seulement là qu'on pouvait
+  découvrir la panne du champ d'en-tête, puis vérifier que l'assistant y
+  échappe.
 
     odoo-bin -d <base> -i dfd_analytic_bulk --test-enable --test-tags /dfd_analytic_bulk
 
