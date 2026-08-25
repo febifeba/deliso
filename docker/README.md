@@ -3,11 +3,38 @@
 Un Odoo 19.0 sur sa propre machine, pour développer et éprouver les modules de
 ce dépôt sans déranger un serveur ni attendre personne.
 
-## Une fois pour toutes
+## Préalable : Docker Desktop
 
-Installer **Docker Desktop**. Dans ses réglages, lui donner au moins **4 Go de
-mémoire** — Odoo démarre avec moins, mais l'installation de la comptabilité
-traîne.
+**Rien de ce qui suit ne marche sans lui.** Si le terminal répond
+`zsh: command not found: docker`, c'est ici qu'il faut commencer.
+
+Connaître son processeur, pour choisir la bonne variante :
+
+```bash
+uname -m
+```
+
+`arm64` = Apple Silicon (M1 à M4). `x86_64` = Intel. Une mauvaise variante
+s'installe quand même, et se traîne.
+
+Avec Homebrew :
+
+```bash
+brew install --cask docker
+```
+
+Sinon, <https://www.docker.com/products/docker-desktop/>.
+
+**Puis ouvrir l'application Docker**, et attendre que l'icône de la barre de
+menus se fige. Le programme `docker` du terminal ne fait que parler à un
+service qui ne tourne que lorsque Docker Desktop est lancé ; sans ça, l'erreur
+devient `Cannot connect to the Docker daemon`, ce qui ressemble à une panne
+alors que c'est l'application fermée.
+
+Dans les réglages de Docker Desktop, lui donner au moins **4 Go de mémoire** —
+Odoo démarre avec moins, mais l'installation de la comptabilité traîne.
+
+Docker Desktop est gratuit pour les entreprises de moins de 250 personnes.
 
 ## Démarrer
 
