@@ -557,3 +557,94 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
 
         with self.assertRaises(UserError):
             bill.action_dfd_clear_lines()
+
+    # ------------------------------------------------------------------
+    # Pointing at the lines: two sites on one bill
+    # ------------------------------------------------------------------
+
+    def test_selection_restricts_the_write(self):
+        bill = self._new_bill()
+        lines = self._product_lines(bill)
+        self.assertEqual(len(lines), 2)
+        first, second = lines[0], lines[1]
+        first.dfd_selected = True
+
+        self._apply_via_wizard(bill, self.dist_a)
+
+        self.assertEqual(first.analytic_distribution, self.dist_a)
+        self.assertFalse(second.analytic_distribution)
+
+    def test_no_selection_means_every_line(self):
+        bill = self._new_bill()
+
+        self._apply_via_wizard(bill, self.dist_a)
+
+        for line in self._product_lines(bill):
+            self.assertEqual(line.analytic_distribution, self.dist_a)
+
+    def test_the_ticks_are_cleared_once_honoured(self):
+        # Otherwise the second site would mean unticking twenty-five boxes
+        # first, which is the very work this spares.
+        bill = self._new_bill()
+        lines = self._product_lines(bill)
+        lines[0].dfd_selected = True
+
+        self._apply_via_wizard(bill, self.dist_a)
+
+        self.assertFalse(lines.filtered('dfd_selected'))
+
+    def test_two_sites_on_one_bill_in_two_passes(self):
+        # The case Jérôme described: one bill, two sites. Tick the first
+        # site's lines and apply; then apply the second to what is left,
+        # with the scope on empty lines only -- no ticking needed.
+        bill = self._new_bill()
+        lines = self._product_lines(bill)
+        first, second = lines[0], lines[1]
+
+        first.dfd_selected = True
+        self._apply_via_wizard(bill, self.dist_a)
+        self._apply_via_wizard(bill, self.dist_b, mode='empty')
+
+        self.assertEqual(first.analytic_distribution, self.dist_a)
+        self.assertEqual(second.analytic_distribution, self.dist_b)
+
+    def test_the_wizard_counts_the_selection_not_the_document(self):
+        bill = self._new_bill()
+        lines = self._product_lines(bill)
+        lines[0].dfd_selected = True
+
+        wizard = self._wizard_for(bill)
+
+        self.assertTrue(wizard.on_selection)
+        self.assertEqual(wizard.line_count, 1)
+        self.assertIn("1", wizard.message)
+
+    def test_a_ticked_section_is_still_ignored(self):
+        # dfd_selected sits on every line of the tab, sections included.
+        # Ticking one must not make it allocatable.
+        order = self.env['purchase.order'].create({
+            'partner_id': self.partner_a.id,
+            'order_line': [
+                Command.create({'product_id': self.product_a.id, 'product_qty': 1}),
+                Command.create({'display_type': 'line_section', 'name': "Materials", 'product_qty': 0}),
+            ],
+        })
+        section = order.order_line.filtered('display_type')
+        section.dfd_selected = True
+
+        order.analytic_distribution = self.dist_a
+        order.action_dfd_apply_analytic()
+
+        self.assertFalse(section.analytic_distribution)
+        for line in order.order_line.filtered(lambda l: not l.display_type):
+            self.assertEqual(line.analytic_distribution, self.dist_a)
+
+    def test_a_selection_survives_no_further_than_the_document(self):
+        # copy=False: duplicating a half-ticked bill must not carry the
+        # selection over, or the copy would allocate the wrong half.
+        bill = self._new_bill()
+        self._product_lines(bill)[0].dfd_selected = True
+
+        copy = bill.copy()
+
+        self.assertFalse(self._product_lines(copy).filtered('dfd_selected'))

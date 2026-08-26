@@ -58,6 +58,25 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
         """
         raise NotImplementedError
 
+    def _dfd_lines_to_write(self):
+        """Return the lines the button will actually write on.
+
+        The ticked ones if any were ticked, every eligible line otherwise.
+        A bill carrying two sites is done in two passes: tick the first
+        site's lines and apply, then apply the second site to what is left
+        with the scope set to *only fill in the empty lines* -- the second
+        pass needs no ticking at all.
+
+        Ticking nothing meaning *everything* is what keeps the ordinary case
+        a single click. It also means the feature costs nothing to whoever
+        never turns the column on.
+
+        :return: a recordset of lines belonging to ``self``
+        """
+        self.ensure_one()
+        lines = self._dfd_target_lines()
+        return lines.filtered('dfd_selected') or lines
+
     def _dfd_check_writable(self):
         """Raise if this document must not be written on at all.
 
@@ -109,16 +128,19 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
         self.ensure_one()
         self._dfd_check_writable()
 
-        lines = self._dfd_target_lines()
-        if not lines:
+        if not self._dfd_target_lines():
             raise UserError(_("This document has no product line to allocate."))
 
+        lines = self._dfd_lines_to_write()
+        on_selection = bool(lines.filtered('dfd_selected'))
         distribution = self._dfd_header_distribution()
         already_allocated = lines.filtered(lambda line: line.analytic_distribution)
 
         if distribution and not already_allocated and not self._dfd_supports_accounting_fields():
             return self._dfd_apply(distribution, mode='overwrite')
-        return self._dfd_open_apply_wizard(distribution, len(lines), len(already_allocated))
+        return self._dfd_open_apply_wizard(
+            distribution, len(lines), len(already_allocated), on_selection,
+        )
 
     def _dfd_apply(self, distribution=False, mode='empty', account=False, taxes=None):
         """Write the given values on the product lines. An empty value is left alone.
@@ -147,7 +169,7 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
             raise UserError(_("Fill in at least one value to apply."))
         self._dfd_check_writable()
 
-        lines = self._dfd_target_lines()
+        lines = self._dfd_lines_to_write()
         touched = lines.browse()
 
         if distribution:
@@ -176,6 +198,13 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
             # change, so there is nothing to filter here.
             lines.write(values)
             touched |= lines
+
+        # The ticks are cleared once they have been honoured. Leaving them
+        # would force the user to untick twenty-five boxes before dealing
+        # with the second site, which is the very work this spares them.
+        selected = lines.filtered('dfd_selected')
+        if selected:
+            selected.dfd_selected = False
 
         return self._dfd_applied_notification(len(touched))
 
@@ -220,12 +249,14 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
     # Screen returns
     # ------------------------------------------------------------------
 
-    def _dfd_open_apply_wizard(self, distribution, line_count, conflict_count):
+    def _dfd_open_apply_wizard(self, distribution, line_count, conflict_count,
+                               on_selection=False):
         """Open the confirmation wizard, prefilled with what is already known.
 
         :param dict distribution: the header distribution, or ``False``
-        :param int line_count: how many product lines the document holds
+        :param int line_count: how many lines the button will write on
         :param int conflict_count: how many of them are already allocated
+        :param bool on_selection: whether those lines are a ticked subset
         :return: an ``ir.actions.act_window`` dict opening the wizard
         """
         wizard = self.env['dfd.analytic.bulk.apply'].create({
@@ -233,6 +264,7 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
             'res_id': self.id,
             'line_count': line_count,
             'conflict_count': conflict_count,
+            'on_selection': on_selection,
             'analytic_distribution': distribution or False,
         })
         return {

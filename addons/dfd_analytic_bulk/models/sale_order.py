@@ -9,3 +9,8 @@ class SaleOrder(models.Model):
     def _dfd_target_lines(self):
         """Ordinary lines only -- same reading as ``purchase.order.line``."""
         return self.order_line.filtered(lambda line: not line.display_type)
+
+
+class SaleOrderLine(models.Model):
+    _name = 'sale.order.line'
+    _inherit = ['sale.order.line', 'dfd.analytic.bulk.line.mixin']

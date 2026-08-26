@@ -26,6 +26,7 @@ class DfdAnalyticBulkApply(models.TransientModel):
     res_id = fields.Integer(string="Document", required=True, readonly=True)
     line_count = fields.Integer(string="Product Lines", readonly=True)
     conflict_count = fields.Integer(string="Lines Already Allocated", readonly=True)
+    on_selection = fields.Boolean(string="On a Selection", readonly=True)
     message = fields.Char(compute='_compute_message')
 
     # --- derived from the document, used by the view ----------------------
@@ -95,15 +96,33 @@ class DfdAnalyticBulkApply(models.TransientModel):
             else:
                 wizard.tax_type = False
 
-    @api.depends('line_count', 'conflict_count')
+    @api.depends('line_count', 'conflict_count', 'on_selection')
     def _compute_message(self):
-        """State plainly what is about to happen, and to how many lines."""
+        """State plainly what is about to happen, and to how many lines.
+
+        When lines were ticked, the message says so. Someone who forgot a
+        selection made ten minutes ago must not discover it by reading the
+        result.
+        """
         for wizard in self:
-            if wizard.conflict_count:
+            if wizard.conflict_count and wizard.on_selection:
+                wizard.message = _(
+                    "%(conflicts)s of the %(total)s selected lines are already allocated. "
+                    "What should be done with them?",
+                    conflicts=wizard.conflict_count,
+                    total=wizard.line_count,
+                )
+            elif wizard.conflict_count:
                 wizard.message = _(
                     "%(conflicts)s of the %(total)s product lines are already allocated. "
                     "What should be done with them?",
                     conflicts=wizard.conflict_count,
+                    total=wizard.line_count,
+                )
+            elif wizard.on_selection:
+                wizard.message = _(
+                    "This will be applied to the %(total)s lines you ticked, "
+                    "and to them only.",
                     total=wizard.line_count,
                 )
             else:

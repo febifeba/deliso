@@ -14,3 +14,8 @@ class PurchaseOrder(models.Model):
         the exact opposite of ``account.move.line``.
         """
         return self.order_line.filtered(lambda line: not line.display_type)
+
+
+class PurchaseOrderLine(models.Model):
+    _name = 'purchase.order.line'
+    _inherit = ['purchase.order.line', 'dfd.analytic.bulk.line.mixin']

@@ -15,6 +15,12 @@
                        groups="analytic.group_analytic_accounting"
                        options="{'business_domain': 'purchase_order'}"/>
             </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='sequence']" position="after">
+                <field name="dfd_selected"
+                       optional="hide"
+                       width="60px"
+                       groups="analytic.group_analytic_accounting"/>
+            </xpath>
             <xpath expr="//header" position="inside">
                 <button name="action_dfd_apply_analytic"
                         type="object"

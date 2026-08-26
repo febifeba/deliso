@@ -38,6 +38,36 @@ pourcentages** — 60 % sur Bullange, 40 % sur Burg-Reuland. La somme doit faire
 
 ---
 
+## Deux chantiers sur une même facture
+
+Une facture porte souvent deux chantiers. Voici comment faire.
+
+**Une seule fois, au départ :** dans l'onglet des lignes, cliquez sur la petite
+**roue dentée** à droite de la ligne d'en-tête des colonnes, et cochez
+**Sélectionner**. Une colonne de cases apparaît. Elle reste pour vous, et pour
+vous seul — personne d'autre ne la verra dans ses factures.
+
+**Ensuite, à chaque facture à deux chantiers :**
+
+1. cochez les lignes du **premier** chantier ;
+2. cliquez sur **Imputer les lignes**. La fenêtre vous confirme le nombre de
+   lignes cochées ; choisissez le chantier et validez ;
+3. cliquez de nouveau sur **Imputer les lignes**, sans rien cocher cette fois.
+   Choisissez le second chantier et laissez la portée sur **N'affecter que les
+   lignes vides**.
+
+Le second chantier se pose tout seul sur les lignes restées vides. Vous n'avez
+coché que la moitié des lignes, une fois.
+
+Les cases se vident après chaque imputation : vous ne repartez jamais d'une
+sélection oubliée.
+
+**Rien de coché veut dire toutes les lignes.** Si vous n'utilisez pas la
+colonne, rien ne change pour vous : le bouton continue de traiter la facture
+entière.
+
+---
+
 ## Votre travail à la main n'est jamais écrasé
 
 C'est la protection la plus importante du bouton.
@@ -151,6 +181,10 @@ paramètres de comptabilité.
 Dans la vue des **écritures comptables**, on peut sélectionner plusieurs
 lignes, modifier la colonne analytique une fois, et l'appliquer à toutes.
 C'est une fonction standard, elle existait avant ce module.
+
+Mais **seulement là**, en plein écran. Dans une facture ouverte, les lignes
+n'ont pas de cases à cocher : Odoo n'en met jamais dans une liste imbriquée
+d'un formulaire. C'est la raison d'être de la colonne **Sélectionner**.
 
 Ce que le bouton apporte en plus :
 

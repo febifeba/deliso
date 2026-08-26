@@ -41,6 +41,35 @@ recopier, le bouton ouvre simplement l'écran qui la demande.
 - Un compte analytique appartenant à une autre société que le document est
   refusé. La base compte six sociétés et rien dans le widget ne l'empêche.
 
+### Deux chantiers sur une même facture : cocher les lignes
+
+Une colonne **Sélectionner** s'ajoute aux lignes des quatre documents. Cochées,
+seules ces lignes sont écrites ; rien de coché veut dire toutes les lignes — le
+cas ordinaire reste un clic.
+
+La colonne est **facultative et masquée**, et réservée au même groupe que le
+bouton : qui en a besoin l'active une fois depuis le sélecteur de colonnes, pour
+lui seul, et elle reste. Personne d'autre ne voit apparaître une case à cocher
+dans ses factures.
+
+**Pourquoi un champ et pas les cases natives d'Odoo.** Les cases de sélection
+d'une vue liste n'existent que dans une liste ouverte en plein écran, jamais
+dans une liste imbriquée d'un formulaire : `ListRenderer` les lit dans
+`allowSelectors`, qui vaut `False` par défaut et n'est passé à `True` que par le
+contrôleur de liste et la fenêtre de choix d'enregistrements — jamais par le
+champ x2many. Même chose pour `multi_edit`, qui vient du contrôleur de liste.
+Dans une facture, il n'y a donc rien à cocher, et rien à multi-éditer.
+
+**Une facture à deux chantiers se fait en deux passes.** On coche les lignes du
+premier et on applique ; puis on applique le second à ce qui reste, en portée
+*n'affecter que les lignes vides* — la seconde passe ne demande aucune case.
+
+Les cases sont **vidées une fois honorées** : sans ça, traiter le second
+chantier commencerait par décocher vingt-cinq cases, c'est-à-dire par le travail
+qu'on cherchait justement à éviter. Elles ne survivent pas non plus à une
+duplication de document (`copy=False`) : une copie à moitié cochée imputerait la
+mauvaise moitié.
+
 ### Sur une facture en brouillon : le compte et les taxes aussi
 
 L'assistant porte deux champs de plus, **facultatifs** : un **compte comptable**
@@ -140,7 +169,7 @@ va — un `ALTER TABLE ... DROP COLUMN`, sans condition.
 | Déjà là | Détail |
 |---|---|
 | `purchase.order.project_id`, `sale.order.project_id` | Renseigné, toute ligne créée **ensuite** reçoit `analytic_distribution = {compte du projet : 100}`. Les lignes existantes ne sont pas recalculées. |
-| Multi-édition des écritures | La vue liste `account.move.line` porte `multi_edit="1"` et la colonne `analytic_distribution` y est déclarée avec `'multi_edit': true`. Sélectionner N lignes, éditer une fois, appliquer aux N. Colonne `optional="hide"` : à activer dans le sélecteur de colonnes. |
+| Multi-édition des écritures | La vue liste `account.move.line` porte `multi_edit="1"` et la colonne `analytic_distribution` y est déclarée avec `'multi_edit': true`. Sélectionner N lignes, éditer une fois, appliquer aux N. **Uniquement en plein écran** : ni les cases de sélection ni `multi_edit` n'existent dans une liste imbriquée d'un formulaire, donc jamais depuis la facture. |
 | Modèles de distribution analytique | `account.analytic.distribution.model`, appliqués par fournisseur, produit, catégorie. Inutilisables ici, l'imputation n'étant pas prévisible. |
 
 **Pourquoi le champ d'en-tête existe malgré `project_id` :** chez Deliso les
