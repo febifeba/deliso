@@ -91,6 +91,7 @@ msgstr "Ces comptes analytiques appartiennent à une autre société que %(compa
 #. module: dfd_analytic_bulk
 #. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.dfd_analytic_bulk_apply_form
 msgid "Allocate lines to analytic accounts"
 msgstr "Imputer les lignes aux comptes analytiques"
 
@@ -168,11 +169,15 @@ msgstr "Ce document n'accepte ni compte comptable ni taxes."
 #. module: dfd_analytic_bulk
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.dfd_analytic_bulk_apply_form
 msgid ""
-"The account and the taxes are applied to every product line.\n"
-"                        Left empty, they are not touched."
+"<small>\n"
+"                        The account and the taxes are applied to every product line.\n"
+"                        Left empty, they are not touched.\n"
+"                    </small>"
 msgstr ""
-"Le compte et les taxes s'appliquent à toutes les lignes de produit.\n"
-"                        Laissés vides, ils ne sont pas touchés."
+"<small>\n"
+"                        Le compte et les taxes s'appliquent à toutes les lignes de produit.\n"
+"                        Laissés vides, ils ne sont pas touchés.\n"
+"                    </small>"
 
 #. module: dfd_analytic_bulk
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_move_form_dfd_analytic
