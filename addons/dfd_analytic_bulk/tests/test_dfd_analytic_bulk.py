@@ -502,3 +502,58 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             AnalyticLine.read_group([], ['amount:sum'], ['move_line_id.move_id'], lazy=False)
         with self.assertRaises(ValueError):
             AnalyticLine.read_group([], ['amount:sum'], ['auto_account_id'], lazy=False)
+
+    # ------------------------------------------------------------------
+    # Emptying the lines tab in one gesture
+    # ------------------------------------------------------------------
+
+    def test_clear_lines_empties_the_tab(self):
+        bill = self._new_bill()
+        self.assertTrue(bill.invoice_line_ids)
+
+        bill.action_dfd_clear_lines()
+
+        self.assertFalse(bill.invoice_line_ids)
+        self.assertFalse(self._product_lines(bill))
+
+    def test_clear_lines_takes_sections_and_notes_too(self):
+        # invoice_line_ids is exactly what the tab shows: product lines,
+        # sections, subsections and notes. All of it goes.
+        bill = self._new_bill()
+        bill.write({'invoice_line_ids': [
+            Command.create({'display_type': 'line_section', 'name': "Materials"}),
+            Command.create({'display_type': 'line_note', 'name': "Agreed on site"}),
+        ]})
+        self.assertEqual(len(bill.invoice_line_ids), 4)
+
+        bill.action_dfd_clear_lines()
+
+        self.assertFalse(bill.invoice_line_ids)
+
+    def test_clear_lines_leaves_a_usable_draft(self):
+        # Tax lines and the payable counterpart are not deleted by hand:
+        # Odoo recomputes them from what is left, which is nothing.
+        bill = self._new_bill()
+
+        bill.action_dfd_clear_lines()
+
+        self.assertEqual(bill.state, 'draft')
+        self.assertFalse(bill.line_ids.filtered(lambda line: line.display_type == 'tax'))
+        self.assertEqual(bill.amount_total, 0)
+
+    def test_clear_lines_refuses_a_posted_document(self):
+        # The screen hides the button on a posted document. The method
+        # refuses it again: hiding a button closes nothing.
+        bill = self._new_bill(post=True)
+
+        with self.assertRaises(UserError):
+            bill.action_dfd_clear_lines()
+
+        self.assertTrue(bill.invoice_line_ids)
+
+    def test_clear_lines_refuses_an_empty_document(self):
+        bill = self._new_bill()
+        bill.invoice_line_ids.unlink()
+
+        with self.assertRaises(UserError):
+            bill.action_dfd_clear_lines()

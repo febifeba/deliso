@@ -23,6 +23,11 @@ sur toutes les lignes de produit d'un document :
 - une **distribution analytique**, éventuellement répartie en pourcentages ;
 - sur une facture en brouillon, un **compte comptable** et des **taxes**.
 
+Et un second problème, du même encodage : une facture Peppol qui arrive avec
+ses cent lignes, à laquelle on lie ensuite un bon de commande par la saisie
+automatique, se retrouve avec **cent lignes de plus**. Le module ajoute une
+**poubelle au-dessus de la liste des lignes**, qui vide l'onglet d'un clic.
+
 ---
 
 ## 2. Arborescence
@@ -34,7 +39,7 @@ addons/dfd_analytic_bulk/
 ├── models/
 │   ├── dfd_analytic_bulk_mixin.py        (261 l.) le cœur, sans aucun champ
 │   ├── dfd_analytic_bulk_header_mixin.py  (35 l.) ajoute le champ d'en-tête
-│   ├── account_move.py                    (53 l.) factures
+│   ├── account_move.py                    (99 l.) factures, et la poubelle
 │   ├── purchase_order.py                  (16 l.) commandes d'achat
 │   ├── sale_order.py                      (11 l.) commandes de vente
 │   └── account_analytic_line.py           (37 l.) move_id, pour le pivot
@@ -44,7 +49,7 @@ addons/dfd_analytic_bulk/
 ├── views/                                 un fichier par modèle
 ├── security/ir.model.access.csv           accès au modèle transitoire
 ├── i18n/fr.po                             traductions
-└── tests/test_dfd_analytic_bulk.py       (504 l.) 33 tests
+└── tests/test_dfd_analytic_bulk.py       (559 l.) 38 tests
 ```
 
 Le rapport tests / code est volontairement supérieur à 1 : la logique touche
@@ -247,6 +252,24 @@ désinstallant réellement le module sur une copie du banc le 26 août 2026.
 `ir.model.fields._drop_column()` exécute un `ALTER TABLE ... DROP COLUMN` pour
 tout champ stocké dont le module s'en va.
 
+### La poubelle : où elle est, et ce qu'elle emporte
+
+`action_dfd_clear_lines()` supprime tout `invoice_line_ids` — lignes de
+produit, sections, sous-sections et notes, soit exactement ce que l'onglet
+montre. Les lignes de taxe, la contrepartie fournisseur, l'arrondi et
+l'escompte ne sont pas touchés à la main : Odoo les recalcule depuis ce qui
+reste.
+
+Le bouton est placé **dans l'onglet**, au-dessus de la liste, et non dans
+l'en-tête : c'est un geste sur cet onglet, il se lit à côté de ce qu'il vide.
+
+Trois garde-fous, dans cet ordre :
+
+1. il disparaît de l'écran hors brouillon et quand la liste est déjà vide ;
+2. une **confirmation** s'ouvre avant l'exécution ;
+3. la méthode **refuse** un document non brouillon, indépendamment de
+   l'écran — le masquage ne ferme rien.
+
 ### Une réserve
 
 Forcer une taxe **court-circuite la position fiscale**. Si le client en
@@ -257,10 +280,17 @@ remappée. C'est l'intérêt de l'outil autant que son danger.
 
 ## 7. Sécurité
 
-Le bouton est réservé au groupe `analytic.group_analytic_accounting`. **Le
-masquage n'est pas un refus** : `action_apply()` revérifie le groupe, refuse
-tout `res_model` absent d'`ALLOWED_MODELS`, et appelle `check_access('write')`
-sur le document.
+Le bouton **« Imputer les lignes »** est réservé au groupe
+`analytic.group_analytic_accounting`. **Le masquage n'est pas un refus** :
+`action_apply()` revérifie le groupe, refuse tout `res_model` absent
+d'`ALLOWED_MODELS`, et appelle `check_access('write')` sur le document.
+
+La **poubelle** ne porte pas de groupe : qui peut modifier une facture peut
+déjà supprimer ses lignes une à une, le bouton ne fait qu'abréger le geste.
+Ce qu'elle revérifie côté serveur, c'est l'**état** — un document non
+brouillon est refusé même si l'écran a montré le bouton. La suppression
+elle-même passe par `unlink()`, donc par les droits Odoo sur
+`account.move.line`.
 
 Sur un banc **Community**, la case « Comptabilité analytique » des paramètres
 n'existe pas : le bloc est réservé à `account.group_account_user`,
@@ -331,7 +361,7 @@ odoo-bin -d <base> -u dfd_analytic_bulk \
 Verdict attendu :
 
 ```
-0 failed, 0 error(s) of 33 tests
+0 failed, 0 error(s) of 38 tests
 ```
 
 Un Odoo 19 local en deux commandes : voir [`docker/README.md`](../docker/README.md).
@@ -383,3 +413,4 @@ La suite de tests est le filet : elle attrape ces huit points.
 | 19.0.1.3.1 | traductions de l'assistant complétées — un terme de vue se compare octet pour octet, balise `<small>` comprise |
 | 19.0.1.3.2 | idem pour le titre du formulaire |
 | 19.0.1.4.0 | `account.analytic.line.move_id` — la colonne stockée sans laquelle un tableau croisé ne peut pas regrouper par facture |
+| 19.0.1.5.0 | la poubelle : vider les lignes d'une facture en un clic |

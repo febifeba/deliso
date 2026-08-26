@@ -86,6 +86,29 @@ remplacer — laissé vide, le comportement natif reprend la main.
 « Pourquoi pas de champ sur les factures » plus bas. La distribution s'y saisit
 dans l'écran de confirmation, qui s'ouvre donc à chaque fois.
 
+## La poubelle : vider les lignes d'un coup
+
+Une facture Peppol arrive avec ses cent lignes déjà lues dans le XML. Lier
+ensuite un bon de commande — par la **saisie automatique** — ne les remplace
+pas : il **ajoute** les lignes de la commande en dessous. Le document porte
+alors deux fois la même marchandise, et la seule sortie native est la petite
+poubelle de fin de ligne, cent fois.
+
+D'où un bouton **au-dessus de la liste des lignes**, dans l'onglet lui-même :
+il agit sur cet onglet, il se lit à côté de ce qu'il vide. Il ne va pas dans
+l'en-tête.
+
+- Tout ce que l'onglet montre part : lignes de produit, sections,
+  sous-sections et notes — le domaine exact d'`invoice_line_ids`.
+- Les lignes de taxe, la contrepartie fournisseur, l'arrondi et l'escompte ne
+  sont pas touchés à la main : Odoo les recalcule depuis ce qui reste.
+- **Brouillon seulement.** L'écran cache le bouton ailleurs, et la méthode le
+  refuse une seconde fois.
+- Le bouton disparaît quand il n'y a plus rien à supprimer : il ne propose
+  jamais de vider le vide.
+- Une **confirmation** s'ouvre avant. Cent lignes en un clic, sans retour,
+  méritent une question.
+
 ## Ce que le module ne fait pas
 
 - **Il ne touche pas à la génération des `account.analytic.line`.** Elles

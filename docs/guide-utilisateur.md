@@ -114,6 +114,29 @@ qu'au moment de facturer.
 
 ---
 
+## Vider les lignes d'une facture d'un coup
+
+Une facture Peppol arrive avec ses cent lignes déjà lues dans le fichier. Si
+vous liez ensuite un bon de commande avec la **saisie automatique**, Odoo
+n'échange pas les lignes : il **ajoute** celles de la commande en dessous.
+Vous vous retrouvez avec deux cents lignes et la même marchandise deux fois.
+
+Au-dessus de la liste des lignes, dans l'onglet **Lignes de facture**, une
+**petite poubelle** — *Vider les lignes* — supprime tout d'un clic : les
+lignes de produit, les sections et les notes.
+
+Une question vous est posée avant. Répondez-y en connaissance de cause :
+**c'est sans retour.** Il n'y a pas d'annulation, il faut recommencer la
+saisie.
+
+Ce qui n'est pas supprimé : les lignes de TVA et la contrepartie fournisseur,
+qu'Odoo recalcule tout seul depuis ce qui reste.
+
+La poubelle ne s'affiche que sur une facture **en brouillon**, et disparaît
+quand il n'y a déjà plus rien à supprimer.
+
+---
+
 ## Le bouton n'apparaît pas ?
 
 C'est une question de droits. Le bouton est réservé aux personnes autorisées
