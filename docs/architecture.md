@@ -36,14 +36,15 @@ addons/dfd_analytic_bulk/
 │   ├── dfd_analytic_bulk_header_mixin.py  (35 l.) ajoute le champ d'en-tête
 │   ├── account_move.py                    (53 l.) factures
 │   ├── purchase_order.py                  (16 l.) commandes d'achat
-│   └── sale_order.py                      (11 l.) commandes de vente
+│   ├── sale_order.py                      (11 l.) commandes de vente
+│   └── account_analytic_line.py           (37 l.) move_id, pour le pivot
 ├── wizard/
 │   ├── dfd_analytic_bulk_apply.py        (144 l.) l'assistant
 │   └── dfd_analytic_bulk_apply_views.xml
 ├── views/                                 un fichier par modèle
 ├── security/ir.model.access.csv           accès au modèle transitoire
 ├── i18n/fr.po                             traductions
-└── tests/test_dfd_analytic_bulk.py       (431 l.) 29 tests
+└── tests/test_dfd_analytic_bulk.py       (504 l.) 33 tests
 ```
 
 Le rapport tests / code est volontairement supérieur à 1 : la logique touche
@@ -214,9 +215,37 @@ séparation. Le module les relit sur place.
   C'est la piste d'audit qui relie l'analytique à la comptabilité.
 - Aucune surcharge de `_post`, du moteur analytique, ni de `create`/`write`
   sur `account.move.line`.
-- Aucun champ calculé stocké ajouté aux lignes. Aucun `sudo()`, aucun SQL.
+- Aucun champ ajouté aux lignes de facture, de commande ou de vente. Aucun
+  `sudo()`, aucun SQL.
 - **`account.move` n'acquiert ni colonne, ni index GIN, ni table de
   relation.** Le module se désinstalle sans laisser de trace sur les factures.
+
+### La seule colonne que le module ajoute ailleurs
+
+`account.analytic.line.move_id` — la pièce comptable d'origine, en `related`
+stocké sur `move_line_id.move_id`, en lecture seule, avec un index partiel.
+
+Elle existe pour une raison unique : **un tableau croisé ne sait pas regrouper
+par facture sans elle.** `read_group`, la méthode qu'un pivot appelle en RPC,
+refuse les chemins pointés — elle lit `move_line_id.move_id` comme la syntaxe
+d'un champ *propriété* et lève `ValueError: Property name 'move_id' has to be
+used on a property field`. Et `account.analytic.line` ne porte aucun champ
+stocké désignant la pièce : `move_line_id` est la *ligne* d'écriture, la
+regrouper rend une ligne par ligne de facture.
+
+`auto_account_id` ne peut pas remplir ce rôle non plus — il est calculé sans
+être stocké, donc inconvertible en SQL. Il reste valable **en domaine**, où le
+rapport de production s'en sert déjà : c'est en **regroupement** qu'il ne tient
+pas.
+
+Le champ est bâti exactement comme le `journal_id` qu'`account` ajoute au même
+modèle. Il ne crée ni ne modifie aucune écriture analytique : il recopie une
+valeur existante. À la mise à jour du module, Odoo le calcule sur l'existant.
+
+**Il disparaît à la désinstallation**, colonne et index compris — vérifié en
+désinstallant réellement le module sur une copie du banc le 26 août 2026.
+`ir.model.fields._drop_column()` exécute un `ALTER TABLE ... DROP COLUMN` pour
+tout champ stocké dont le module s'en va.
 
 ### Une réserve
 
@@ -302,7 +331,7 @@ odoo-bin -d <base> -u dfd_analytic_bulk \
 Verdict attendu :
 
 ```
-0 failed, 0 error(s) of 29 tests
+0 failed, 0 error(s) of 33 tests
 ```
 
 Un Odoo 19 local en deux commandes : voir [`docker/README.md`](../docker/README.md).
@@ -328,8 +357,16 @@ module s'appuie et qui ont déjà bougé entre versions :
    dans les tests.
 6. **`check_access(operation)`** — a remplacé `check_access_rights` et
    `check_access_rule`.
+7. **`read_group`** disparaît dès `saas~19.3` au profit de
+   `formatted_read_group`, qui ne prend pas les mêmes arguments
+   (`aggregates`, pas `fields`). Le module ne s'en sert nulle part ; deux
+   tests l'appellent, pour épingler le refus des chemins pointés qui
+   justifie `move_id`. À réécrire le jour où Deliso migre — le champ, lui,
+   ne bouge pas.
+8. **`account.analytic.line`** acquiert-il enfin un champ stocké désignant la
+   pièce ? Si Odoo l'ajoute, `move_id` fait doublon et doit partir.
 
-La suite de tests est le filet : elle attrape ces six points.
+La suite de tests est le filet : elle attrape ces huit points.
 
 ---
 
@@ -343,3 +380,6 @@ La suite de tests est le filet : elle attrape ces six points.
 | 19.0.1.2.0 | bouton visible même en-tête vide — il était introuvable sur les commandes |
 | 19.0.1.2.1 | traductions réparées — le marqueur `#. odoo-python` manquait |
 | 19.0.1.3.0 | compte comptable et taxes dans l'assistant, sur facture en brouillon |
+| 19.0.1.3.1 | traductions de l'assistant complétées — un terme de vue se compare octet pour octet, balise `<small>` comprise |
+| 19.0.1.3.2 | idem pour le titre du formulaire |
+| 19.0.1.4.0 | `account.analytic.line.move_id` — la colonne stockée sans laquelle un tableau croisé ne peut pas regrouper par facture |

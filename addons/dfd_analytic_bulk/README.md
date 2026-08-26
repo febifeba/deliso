@@ -97,9 +97,18 @@ dans l'écran de confirmation, qui s'ouvre donc à chaque fois.
   l'écriture comptable.
 - **Il ne touche à aucun rapport.** Voir plus bas.
 - Aucune surcharge de `_post`, ni du moteur analytique, ni de
-  `create`/`write` sur `account.move.line`. Aucun champ calculé stocké ajouté
-  aux lignes. Pas de `sudo()`, pas de SQL. Désinstallable sans laisser de
-  trace hors les trois champs d'en-tête.
+  `create`/`write` sur `account.move.line`. Aucun champ ajouté aux lignes de
+  facture, de commande ou de vente. Pas de `sudo()`, pas de SQL.
+- **Il ajoute en revanche une colonne à `account.analytic.line`** : `move_id`,
+  la pièce comptable d'origine. Voir « Le rapport de Jérôme » plus bas.
+  Elle ne crée ni ne modifie aucune écriture analytique, elle recopie une
+  valeur qui existe déjà.
+
+**Désinstallable sans laisser de trace.** Vérifié en désinstallant réellement
+le module sur une copie du banc, le 26 août 2026 : `move_id` et les trois
+champs d'en-tête disparaissent de PostgreSQL avec leurs index. Odoo appelle
+`ir.model.fields._drop_column()` pour tout champ stocké dont le module s'en
+va — un `ALTER TABLE ... DROP COLUMN`, sans condition.
 
 ## Ce qui était déjà natif — à ne pas réécrire
 
@@ -119,7 +128,7 @@ seulement 15 `project.project` qui sont des artefacts (« Services sur site »,
 81 projets miroir, qui pollueraient l'app Projet sans rien apporter. Le champ
 d'en-tête n'est donc pas un confort : c'est le mécanisme principal.
 
-## Le rapport de Jérôme : rien à développer ici
+## Le rapport de Jérôme : une colonne, et rien de plus
 
 Le tableau de bord « Analytique chantiers » (`spreadsheet.dashboard`) n'est pas
 un développement, c'est un Odoo Spreadsheet. Son contenu réel est une **source
@@ -129,13 +138,55 @@ consolidation**.
 
 S'il paraît consolidé aujourd'hui, c'est seulement parce que les factures
 fournisseurs actuelles ont presque toutes une seule ligne. Le jour où Peppol
-en apporte à 50 lignes, la liste en affichera 50 par facture.
+en apporte à 50 lignes, la liste en affichera 50 par facture — et ce module,
+qui les impute toutes, en fabrique justement cinquante là où l'en-tête n'en
+produisait qu'une.
 
-**Le correctif est dans le tableau de bord, pas dans le module** : remplacer la
-feuille `ODOO.LIST` par un pivot sur `account.analytic.line` (lignes = compte
-général + chantier, mesure = montant), en gardant éventuellement la liste
-détaillée sur une seconde feuille. Manipulation Odoo Spreadsheet, une
-demi-heure.
+Le correctif est **un tableau croisé** dans le tableau de bord : lignes =
+chantier + pièce, mesure = montant. Manipulation Odoo Spreadsheet, pas de
+développement.
+
+**Sauf qu'un tableau croisé ne peut pas regrouper par facture**, et c'est la
+seule raison d'être de `move_id`. Trois constats, exécutés sur les deux bases
+Deliso le 26 août 2026 :
+
+| Regroupement demandé | Résultat |
+|---|---|
+| `['account_id', 'move_line_id']` | passe, mais rend **une ligne par ligne de facture** — le défaut qu'on veut supprimer |
+| `['move_line_id.move_id']` | `ValueError: Property name 'move_id' has to be used on a property field` |
+| `['auto_account_id']` | `ValueError: Cannot convert ... to SQL because it is not stored` |
+
+`read_group`, la méthode qu'un tableau croisé appelle en RPC, **refuse les
+chemins pointés** : elle lit `move_line_id.move_id` comme la syntaxe d'un champ
+*propriété*. Et `account.analytic.line` ne porte aucun champ stocké désignant
+la **pièce** — seulement `move_line_id`, qui est la *ligne* d'écriture.
+
+`ref` ne peut pas servir de repli : c'est la référence **fournisseur**. En
+production, 62 valeurs de `ref` sont partagées par plusieurs pièces (« Solde »
+sur dix factures, « Acompte » sur treize) et 55 pièces ont un `ref` qui varie
+d'une ligne à l'autre. Regrouper dessus fusionnerait dix factures en une ligne.
+
+D'où un `related` stocké, bâti exactement comme le `journal_id` qu'`account`
+ajoute deux champs plus haut dans le même fichier :
+
+```python
+move_id = fields.Many2one(
+    'account.move', related='move_line_id.move_id',
+    store=True, readonly=True, index='btree_not_null',
+)
+```
+
+Il est en **lecture seule** : il ne se saisit pas, il suit `move_line_id`. À la
+mise à jour du module, Odoo le calcule sur l'existant — 5 526 écritures en
+test, 6 412 en production, instantané.
+
+`auto_account_id` reste parfaitement valable **en domaine**, et le rapport de
+production s'en sert déjà. C'est en **regroupement** qu'il ne tient pas : il
+n'est pas stocké. Ne pas le remplacer.
+
+Le champ apparaît aussi en colonne facultative, masquée par défaut, dans la
+liste des écritures analytiques — de quoi vérifier et regrouper sans ouvrir un
+rapport.
 
 ## Pourquoi pas de champ sur les factures
 

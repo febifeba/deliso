@@ -2,7 +2,7 @@
 {
     "name": "dFd Analytic Bulk",
     "summary": "Set the analytic distribution, general account and taxes on every product line at once",
-    "version": "19.0.1.3.2",
+    "version": "19.0.1.4.0",
     "category": "Accounting",
     "author": "dFd",
     "license": "LGPL-3",
@@ -15,6 +15,7 @@
     "data": [
         "security/ir.model.access.csv",
         "wizard/dfd_analytic_bulk_apply_views.xml",
+        "views/account_analytic_line_views.xml",
         "views/account_move_views.xml",
         "views/purchase_order_views.xml",
         "views/sale_order_views.xml",

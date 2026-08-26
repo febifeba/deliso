@@ -429,3 +429,76 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         })
         with self.assertRaises(AccessError):
             wizard.action_apply()
+
+    # ------------------------------------------------------------------
+    # The stored move_id that lets a pivot group by entry
+    # ------------------------------------------------------------------
+
+    def test_analytic_lines_carry_the_entry(self):
+        # Every analytic line born of a bill points back at that bill, so a
+        # pivot can group on a stored column instead of a dotted path.
+        bill = self._new_bill()
+        self._apply_via_wizard(bill, self.dist_a)
+        bill.action_post()
+
+        analytic_lines = self._product_lines(bill).analytic_line_ids
+        self.assertTrue(analytic_lines)
+        self.assertEqual(analytic_lines.move_id, bill)
+
+    def test_move_id_follows_the_journal_item(self):
+        # The field is related and read-only: it must never be typed in, only
+        # follow move_line_id.
+        bill = self._new_bill()
+        self._apply_via_wizard(bill, self.dist_a)
+        bill.action_post()
+
+        analytic_line = self._product_lines(bill).analytic_line_ids[0]
+        self.assertEqual(analytic_line.move_id, analytic_line.move_line_id.move_id)
+        self.assertTrue(self.env['account.analytic.line']._fields['move_id'].related)
+        self.assertTrue(self.env['account.analytic.line']._fields['move_id'].store)
+        self.assertTrue(self.env['account.analytic.line']._fields['move_id'].readonly)
+
+    def test_a_split_bill_groups_into_two_rows_not_one(self):
+        # The whole point of the field. A bill split 60/40 across two sites
+        # must yield exactly two rows, one per site, and never one row per
+        # invoice line -- the flood the site dashboard suffers from.
+        bill = self._new_bill()
+        self._apply_via_wizard(bill, self.dist_split)
+        bill.action_post()
+
+        # Which column carries the site depends on the plan: only the project
+        # plan is stored in account_id, every other plan gets its own
+        # x_plan<id>_id column. Deliso's Chantiers plan happens to be the
+        # project plan, the test rig's is not, so the column is asked for
+        # rather than assumed.
+        plan_column = self.plan._column_name()
+        rows = self.env['account.analytic.line'].read_group(
+            [('move_id', '=', bill.id)],
+            ['amount:sum'],
+            [plan_column, 'move_id'],
+            lazy=False,
+        )
+
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(
+            {row[plan_column][0] for row in rows},
+            {self.site_a.id, self.site_b.id},
+        )
+        # Two rows out of four analytic lines: two product lines times two
+        # sites. Without the field there would be four.
+        self.assertEqual(len(self._product_lines(bill).analytic_line_ids), 4)
+
+    def test_grouping_by_entry_does_not_raise(self):
+        # ``read_group`` is the path a pivot table takes over RPC, and it is
+        # stricter than the internal ``_read_group``: it reads a dotted
+        # groupby as a property field and refuses it outright. That refusal is
+        # the whole reason this field exists, so it is pinned here alongside
+        # the other dead end, a computed field that is not stored.
+        AnalyticLine = self.env['account.analytic.line']
+
+        AnalyticLine.read_group([], ['amount:sum'], ['account_id', 'move_id'], lazy=False)
+
+        with self.assertRaises(ValueError):
+            AnalyticLine.read_group([], ['amount:sum'], ['move_line_id.move_id'], lazy=False)
+        with self.assertRaises(ValueError):
+            AnalyticLine.read_group([], ['amount:sum'], ['auto_account_id'], lazy=False)
