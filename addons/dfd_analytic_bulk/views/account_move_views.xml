@@ -17,6 +17,21 @@
                         groups="analytic.group_analytic_accounting"
                         invisible="move_type == 'entry'"/>
             </xpath>
+            <!-- The bin sits above the list, where the lines are, not in the
+                 header: it is a gesture on the tab, and it must be read next
+                 to what it empties. Hidden on a posted document and on an
+                 empty one, so it never offers to delete nothing. -->
+            <xpath expr="//page[@id='invoice_tab']/field[@name='invoice_line_ids']" position="before">
+                <div class="text-end">
+                    <button name="action_dfd_clear_lines"
+                            type="object"
+                            icon="fa-trash-o"
+                            string="Empty the lines"
+                            class="btn-link text-danger"
+                            confirm="Delete every line of this document? Sections and notes go too. This cannot be undone."
+                            invisible="state != 'draft' or not invoice_line_ids"/>
+                </div>
+            </xpath>
         </field>
     </record>
 </odoo>

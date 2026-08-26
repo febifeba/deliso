@@ -186,6 +186,38 @@ msgstr ""
 
 #. module: dfd_analytic_bulk
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_move_form_dfd_analytic
+msgid "Empty the lines"
+msgstr "Vider les lignes"
+
+#. module: dfd_analytic_bulk
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_move_form_dfd_analytic
+msgid ""
+"Delete every line of this document? Sections and notes go too. This cannot "
+"be undone."
+msgstr ""
+"Supprimer toutes les lignes de ce document ? Les sections et les notes "
+"partent aussi. C'est sans retour."
+
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/models/account_move.py:0
+msgid "Only a draft document can have its lines emptied."
+msgstr "Seul un document en brouillon peut être vidé de ses lignes."
+
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/models/account_move.py:0
+msgid "This document has no line to delete."
+msgstr "Ce document n'a aucune ligne à supprimer."
+
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/models/account_move.py:0
+msgid "%(count)s line(s) deleted."
+msgstr "%(count)s ligne(s) supprimée(s)."
+
+#. module: dfd_analytic_bulk
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_move_form_dfd_analytic
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.purchase_order_form_dfd_analytic
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_order_form_dfd_analytic
 msgid "Allocate lines"
