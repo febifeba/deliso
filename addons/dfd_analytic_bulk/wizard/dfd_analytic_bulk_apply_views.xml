@@ -9,6 +9,9 @@
                 <field name="res_id" invisible="1"/>
                 <field name="line_count" invisible="1"/>
                 <field name="conflict_count" invisible="1"/>
+                <field name="company_id" invisible="1"/>
+                <field name="show_accounting_fields" invisible="1"/>
+                <field name="tax_type" invisible="1"/>
                 <div class="alert alert-info" role="alert" invisible="conflict_count">
                     <field name="message" nolabel="1" readonly="1"/>
                 </div>
@@ -18,10 +21,24 @@
                 <group>
                     <field name="analytic_distribution"
                            widget="analytic_distribution"
-                           required="1"
                            options="{'business_domain': 'general'}"/>
                     <field name="mode" widget="radio" invisible="not conflict_count"/>
                 </group>
+                <group invisible="not show_accounting_fields">
+                    <field name="account_id"
+                           options="{'no_create': True}"
+                           domain="[('company_ids', 'in', company_id), ('account_type', '!=', 'off_balance')]"/>
+                    <field name="tax_ids"
+                           widget="many2many_tags"
+                           options="{'no_create': True}"
+                           domain="[('company_id', '=', company_id), ('type_tax_use', '=', tax_type)]"/>
+                </group>
+                <div class="text-muted" invisible="not show_accounting_fields">
+                    <small>
+                        The account and the taxes are applied to every product line.
+                        Left empty, they are not touched.
+                    </small>
+                </div>
                 <footer>
                     <button name="action_apply" type="object" string="Apply" class="btn-primary"/>
                     <button special="cancel" string="Cancel" class="btn-secondary"/>

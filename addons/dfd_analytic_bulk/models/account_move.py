@@ -18,6 +18,17 @@ class AccountMove(models.Model):
         # écartées par le même test.
         return self.line_ids.filtered(lambda line: line.display_type == 'product')
 
+    def _dfd_supports_accounting_fields(self):
+        # Brouillon seulement, et pour deux raisons distinctes. Odoo refuse de
+        # toute façon de modifier les taxes d'une pièce comptabilisée
+        # (« You cannot modify the taxes related to a posted journal item »).
+        # Le compte, lui, passerait — mais le changer sur une ligne lettrée
+        # DELETTRE la pièce, donc défait un rapprochement bancaire sans que
+        # personne ne l'ait demandé. Une facture Peppol qui vient d'arriver est
+        # de toute façon en brouillon.
+        self.ensure_one()
+        return self.state == 'draft'
+
     def _dfd_check_writable(self):
         # Odoo ne protège PAS analytic_distribution par les dates de
         # verrouillage : _get_lock_date_protected_fields() ne liste que

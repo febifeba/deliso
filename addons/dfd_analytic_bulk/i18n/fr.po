@@ -85,12 +85,6 @@ msgstr "Ce document n'a aucune ligne de produit à imputer."
 #. module: dfd_analytic_bulk
 #. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
-msgid "Choose an analytic distribution first."
-msgstr "Choisissez d'abord une distribution analytique."
-
-#. module: dfd_analytic_bulk
-#. odoo-python
-#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
 msgid "These analytic accounts belong to another company than %(company)s: %(accounts)s"
 msgstr "Ces comptes analytiques appartiennent à une autre société que %(company)s : %(accounts)s"
 
@@ -133,6 +127,52 @@ msgstr "Vous n'avez pas accès à la comptabilité analytique."
 #: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
 msgid "Model %s does not support bulk analytic allocation."
 msgstr "Le modèle %s ne gère pas l'imputation analytique en masse."
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__account_id
+msgid "General Account"
+msgstr "Compte comptable"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__tax_ids
+msgid "Taxes"
+msgstr "Taxes"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,help:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__account_id
+msgid "Leave empty to keep the account already on each line."
+msgstr "Laissez vide pour conserver le compte déjà présent sur chaque ligne."
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,help:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__tax_ids
+msgid "Leave empty to keep the taxes already on each line."
+msgstr "Laissez vide pour conserver les taxes déjà présentes sur chaque ligne."
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,help:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__mode
+msgid "Applies to the analytic distribution only."
+msgstr "Ne concerne que la distribution analytique."
+
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+msgid "Fill in at least one value to apply."
+msgstr "Renseignez au moins une valeur à appliquer."
+
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
+msgid "This document does not accept a general account or taxes."
+msgstr "Ce document n'accepte ni compte comptable ni taxes."
+
+#. module: dfd_analytic_bulk
+#: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.dfd_analytic_bulk_apply_form
+msgid ""
+"The account and the taxes are applied to every product line.\n"
+"                        Left empty, they are not touched."
+msgstr ""
+"Le compte et les taxes s'appliquent à toutes les lignes de produit.\n"
+"                        Laissés vides, ils ne sont pas touchés."
 
 #. module: dfd_analytic_bulk
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.view_move_form_dfd_analytic

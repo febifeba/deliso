@@ -54,10 +54,12 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         self.assertEqual(action['res_model'], 'dfd.analytic.bulk.apply')
         return self.env['dfd.analytic.bulk.apply'].browse(action['res_id'])
 
-    def _apply_via_wizard(self, document, distribution, mode='empty'):
+    def _apply_via_wizard(self, document, distribution, mode='empty', **extra):
         wizard = self._wizard_for(document)
         wizard.analytic_distribution = distribution
         wizard.mode = mode
+        for name, value in extra.items():
+            wizard[name] = value
         return wizard.action_apply()
 
     # ------------------------------------------------------------------
@@ -101,10 +103,112 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         for line in self._product_lines(bill):
             self.assertEqual(line.analytic_distribution, self.dist_split)
 
-    def test_apply_without_distribution_is_refused(self):
+    def test_apply_with_nothing_filled_is_refused(self):
         bill = self._new_bill()
         with self.assertRaises(UserError):
-            bill._dfd_apply_analytic(False)
+            bill._dfd_apply()
+
+    # ------------------------------------------------------------------
+    # Compte comptable et taxes : vide = on ne touche pas
+    # ------------------------------------------------------------------
+
+    def test_account_is_applied_to_every_product_line(self):
+        bill = self._new_bill()
+        autre_compte = self.company_data['default_account_expense']
+        lignes = self._product_lines(bill)
+        self.assertTrue(any(l.account_id != autre_compte for l in lignes))
+
+        self._apply_via_wizard(bill, self.dist_a, account_id=autre_compte)
+
+        for ligne in self._product_lines(bill):
+            self.assertEqual(ligne.account_id, autre_compte)
+
+    def test_taxes_are_applied_to_every_product_line(self):
+        bill = self._new_bill()
+        autre_taxe = self.tax_purchase_b
+        self._apply_via_wizard(bill, self.dist_a, tax_ids=autre_taxe)
+
+        for ligne in self._product_lines(bill):
+            self.assertEqual(ligne.tax_ids, autre_taxe)
+
+    def test_empty_account_and_taxes_change_nothing(self):
+        bill = self._new_bill()
+        avant = {
+            ligne.id: (ligne.account_id, ligne.tax_ids)
+            for ligne in self._product_lines(bill)
+        }
+
+        self._apply_via_wizard(bill, self.dist_a)
+
+        for ligne in self._product_lines(bill):
+            compte, taxes = avant[ligne.id]
+            self.assertEqual(ligne.account_id, compte)
+            self.assertEqual(ligne.tax_ids, taxes)
+
+    def test_account_alone_leaves_the_analytic_alone(self):
+        # C'est tout l'intérêt de la règle « vide = on ne touche pas » :
+        # corriger un compte sans défaire une ventilation.
+        bill = self._new_bill()
+        lignes = self._product_lines(bill)
+        lignes[0].analytic_distribution = self.dist_b
+
+        wizard = self._wizard_for(bill)
+        wizard.account_id = self.company_data['default_account_expense']
+        wizard.action_apply()
+
+        self.assertEqual(lignes[0].analytic_distribution, self.dist_b)
+        self.assertFalse(lignes[1].analytic_distribution)
+        for ligne in lignes:
+            self.assertEqual(ligne.account_id, self.company_data['default_account_expense'])
+
+    def test_account_leaves_tax_and_payable_lines_alone(self):
+        bill = self._new_bill()
+        autre_compte = self.company_data['default_account_expense']
+        autres = bill.line_ids.filtered(lambda l: l.display_type != 'product')
+        avant = {ligne.id: ligne.account_id for ligne in autres}
+        self.assertTrue(avant)
+
+        self._apply_via_wizard(bill, self.dist_a, account_id=autre_compte)
+
+        for ligne in bill.line_ids.filtered(lambda l: l.display_type == 'payment_term'):
+            self.assertEqual(ligne.account_id, avant[ligne.id])
+
+    # ------------------------------------------------------------------
+    # Compte et taxes : brouillon seulement
+    # ------------------------------------------------------------------
+
+    def test_posted_invoice_refuses_account_and_taxes(self):
+        # Odoo refuse de toute façon de modifier les taxes d'une pièce
+        # comptabilisée, et changer le compte d'une ligne lettrée la délettre.
+        bill = self._new_bill(post=True)
+        self.assertFalse(bill._dfd_supports_accounting_fields())
+        with self.assertRaises(UserError):
+            bill._dfd_apply(account=self.company_data['default_account_expense'])
+
+    def test_draft_invoice_supports_accounting_fields(self):
+        self.assertTrue(self._new_bill()._dfd_supports_accounting_fields())
+
+    def test_orders_refuse_account_and_taxes(self):
+        # Une ligne de commande n'a pas de compte comptable : il n'apparaît
+        # qu'à la facturation.
+        order = self.env['purchase.order'].create({
+            'partner_id': self.partner_a.id,
+            'order_line': [Command.create({'product_id': self.product_a.id, 'product_qty': 1})],
+        })
+        self.assertFalse(order._dfd_supports_accounting_fields())
+        with self.assertRaises(UserError):
+            order._dfd_apply(account=self.company_data['default_account_expense'])
+
+    def test_wizard_hides_accounting_fields_on_a_posted_invoice(self):
+        bill = self._new_bill(post=True)
+        wizard = self._wizard_for(bill)
+        self.assertFalse(wizard.show_accounting_fields)
+        self.assertEqual(wizard.company_id, bill.company_id)
+
+    def test_wizard_offers_purchase_taxes_on_a_vendor_bill(self):
+        wizard = self._wizard_for(self._new_bill())
+        self.assertTrue(wizard.show_accounting_fields)
+        self.assertEqual(wizard.tax_type, 'purchase')
 
     def test_mode_empty_leaves_manual_allocations_alone(self):
         bill = self._new_bill()

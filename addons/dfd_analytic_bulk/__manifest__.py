@@ -1,8 +1,8 @@
 # Part of DorFAdoo. See LICENSE file for full copyright and licensing details.
 {
     "name": "dFd Analytic Bulk",
-    "summary": "Allocate every product line of a document to analytic accounts at once",
-    "version": "19.0.1.2.1",
+    "summary": "Set the analytic distribution, general account and taxes on every product line at once",
+    "version": "19.0.1.3.0",
     "category": "Accounting",
     "author": "dFd",
     "license": "LGPL-3",
