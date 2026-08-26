@@ -1,5 +1,5 @@
 # Part of DorFAdoo. See LICENSE file for full copyright and licensing details.
-from odoo import _, models
+from odoo import _, models, Command
 from odoo.exceptions import UserError
 
 # Les seuls modèles autorisés à porter le bouton. Le wizard s'y réfère pour
@@ -57,6 +57,15 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
         """
         return False
 
+    def _dfd_supports_accounting_fields(self):
+        """Le document accepte-t-il qu'on lui pose un compte et des taxes ?
+
+        Non par défaut. Les lignes de commande n'ont pas de compte comptable —
+        il n'apparaît qu'à la facturation — et forcer une taxe sur une commande
+        n'a pas d'intérêt : elle vient du produit et du fournisseur.
+        """
+        return False
+
     # ------------------------------------------------------------------
     # Le bouton
     # ------------------------------------------------------------------
@@ -79,28 +88,55 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
         distribution = self._dfd_header_distribution()
         already_filled = lines.filtered(lambda line: line.analytic_distribution)
 
-        if distribution and not already_filled:
-            return self._dfd_apply_analytic(distribution, mode='overwrite')
+        if distribution and not already_filled and not self._dfd_supports_accounting_fields():
+            return self._dfd_apply(distribution, mode='overwrite')
         return self._dfd_open_apply_wizard(distribution, len(lines), len(already_filled))
 
-    def _dfd_apply_analytic(self, distribution, mode='empty'):
-        """Écrire la distribution. Appelé par le bouton et par l'assistant."""
+    def _dfd_apply(self, distribution=False, mode='empty', account=False, taxes=None):
+        """Écrire sur les lignes de produit. Un champ vide n'est pas touché.
+
+        La portée (lignes vides seulement / tout écraser) ne gouverne que
+        l'analytique : c'est là qu'une ventilation posée à la main mérite
+        d'être préservée. Un compte comptable, lui, est obligatoire sur toute
+        ligne — aucune n'est jamais vide, « n'affecter que les lignes vides »
+        n'y voudrait rien dire. Renseigné, il s'applique partout.
+        """
         self.ensure_one()
-        if not distribution:
-            raise UserError(_("Choose an analytic distribution first."))
-        self._dfd_check_analytic_company(distribution)
+        if not distribution and not account and not taxes:
+            raise UserError(_("Fill in at least one value to apply."))
         self._dfd_check_writable()
 
         lines = self._dfd_analytic_target_lines()
-        if mode == 'empty':
-            lines = lines.filtered(lambda line: not line.analytic_distribution)
-        # Une ligne qui porte déjà exactement la même distribution n'est pas
-        # réécrite : chaque écriture fait retirer puis recréer ses écritures
-        # analytiques par _inverse_analytic_distribution.
-        lines = lines.filtered(lambda line: line.analytic_distribution != distribution)
-        if lines:
-            lines.write({'analytic_distribution': distribution})
-        return self._dfd_applied_notification(len(lines))
+        touchees = self.env[lines._name] if lines else lines
+
+        if distribution:
+            self._dfd_check_analytic_company(distribution)
+            cibles = lines if mode == 'overwrite' else lines.filtered(
+                lambda line: not line.analytic_distribution
+            )
+            # Une ligne qui porte déjà exactement la même distribution n'est pas
+            # réécrite : chaque écriture fait retirer puis recréer ses écritures
+            # analytiques par _inverse_analytic_distribution.
+            cibles = cibles.filtered(lambda line: line.analytic_distribution != distribution)
+            if cibles:
+                cibles.write({'analytic_distribution': distribution})
+            touchees |= cibles
+
+        if account or taxes:
+            if not self._dfd_supports_accounting_fields():
+                raise UserError(_(
+                    "This document does not accept a general account or taxes."
+                ))
+            valeurs = {}
+            if account:
+                valeurs['account_id'] = account.id
+            if taxes:
+                valeurs['tax_ids'] = [Command.set(taxes.ids)]
+            if lines:
+                lines.write(valeurs)
+            touchees |= lines
+
+        return self._dfd_applied_notification(len(touchees))
 
     # ------------------------------------------------------------------
     # Contrôles

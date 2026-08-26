@@ -41,6 +41,41 @@ recopier, le bouton ouvre simplement l'écran qui la demande.
 - Un compte analytique appartenant à une autre société que le document est
   refusé. La base compte six sociétés et rien dans le widget ne l'empêche.
 
+### Sur une facture en brouillon : le compte et les taxes aussi
+
+L'assistant porte deux champs de plus, **facultatifs** : un **compte comptable**
+et des **taxes**. Une facture Peppol de matériaux, c'est souvent le même 604 et
+la même TVA sur les cinquante lignes.
+
+**Un champ laissé vide n'est pas touché.** C'est ce qui permet de corriger une
+taxe sans défaire les comptes, ou un compte sans défaire une ventilation
+analytique posée à la main.
+
+La **portée** — lignes vides seulement / tout écraser — ne gouverne que
+l'analytique. Un compte comptable est obligatoire sur toute ligne : aucune n'est
+jamais vide, « n'affecter que les lignes vides » n'y voudrait rien dire.
+Renseigné, il s'applique partout, et l'écran l'annonce.
+
+**Brouillon seulement, et pour deux raisons distinctes.** Odoo refuse de toute
+façon de modifier les taxes d'une pièce comptabilisée — *« You cannot modify the
+taxes related to a posted journal item »*. Le compte, lui, passerait, mais le
+changer sur une ligne lettrée **délettre la pièce** : ça défait un rapprochement
+bancaire sans que personne ne l'ait demandé. Une facture qui vient d'arriver est
+de toute façon en brouillon.
+
+Contrairement à l'analytique, ces deux champs **sont** protégés par les dates de
+verrouillage : `_get_lock_date_protected_fields()` liste `account_id`, `tax_ids`
+et `tax_tag_ids`. Le garde-fou écrit à la main plus bas ne concerne qu'elle.
+
+**Une réserve à connaître :** forcer une taxe court-circuite la **position
+fiscale**. Si le client en utilise — intracommunautaire, autoliquidation — la
+taxe imposée ne sera pas remappée. C'est l'intérêt de l'outil autant que son
+danger.
+
+Les commandes d'achat et de vente n'ont **pas** ces deux champs : leurs lignes
+n'ont pas de compte comptable, il n'apparaît qu'à la facturation. Le champ
+`tax_ids` y existe sous le même nom, donc l'étendre plus tard coûterait peu.
+
 **Un champ `analytic_distribution` en en-tête des commandes** d'achat et de
 vente, et d'elles seules. Au moment de commander, on sait pour quel chantier on
 achète : le champ le conserve, et si aucune ligne n'est encore imputée, le
