@@ -16,6 +16,7 @@ Préfixe `dfd_` : DorFAdoo, l'éditeur.
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | technique — architecture, décisions, points d'extension, migration |
 | [`docs/guide-utilisateur.md`](docs/guide-utilisateur.md) | le client — comment se servir du bouton |
+| [`docs/rapport-analytique-chantiers.md`](docs/rapport-analytique-chantiers.md) | le tableau de bord de Jérôme — pourquoi il n'est pas consolidé, et comment le corriger sans code |
 | [`addons/dfd_analytic_bulk/README.md`](addons/dfd_analytic_bulk/README.md) | ce que fait le module, et ce qui était déjà natif |
 
 ## Développer
