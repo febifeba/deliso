@@ -3,38 +3,51 @@ from odoo import models
 
 
 class AccountMove(models.Model):
+    # Deliberately NOT dfd.analytic.bulk.header.mixin: an analytic_distribution
+    # field in an invoice header breaks the form as soon as it takes focus,
+    # whenever account_invoice_extract is installed. The distribution is typed
+    # into the wizard instead. See dfd.analytic.bulk.mixin for the trace.
     _name = 'account.move'
     _inherit = ['account.move', 'dfd.analytic.bulk.mixin']
 
-    # Volontairement PAS dfd.analytic.bulk.header.mixin : un champ
-    # analytic_distribution en en-tête de facture fait planter l'écran dès
-    # qu'il prend le focus, quand account_invoice_extract est installé.
-    # La distribution se saisit dans l'assistant.
+    def _dfd_target_lines(self):
+        """Product lines only.
 
-    def _dfd_analytic_target_lines(self):
-        # Sur account.move.line, une ligne de produit porte display_type
-        # 'product'. Les lignes de taxe ('tax'), de contrepartie
-        # ('payment_term'), d'arrondi, d'escompte, de section et de note sont
-        # écartées par le même test.
+        On ``account.move.line`` a product line carries ``display_type ==
+        'product'``. Tax lines, the payable counterpart, rounding, early
+        payment discounts, sections and notes are all excluded by that single
+        test.
+        """
         return self.line_ids.filtered(lambda line: line.display_type == 'product')
 
     def _dfd_supports_accounting_fields(self):
-        # Brouillon seulement, et pour deux raisons distinctes. Odoo refuse de
-        # toute façon de modifier les taxes d'une pièce comptabilisée
-        # (« You cannot modify the taxes related to a posted journal item »).
-        # Le compte, lui, passerait — mais le changer sur une ligne lettrée
-        # DELETTRE la pièce, donc défait un rapprochement bancaire sans que
-        # personne ne l'ait demandé. Une facture Peppol qui vient d'arriver est
-        # de toute façon en brouillon.
+        """Allow a general account and taxes on draft invoices only.
+
+        Two distinct reasons, not one. Odoo refuses outright to change the
+        taxes of a posted journal item ("You cannot modify the taxes related
+        to a posted journal item"). The account would go through -- but
+        changing it on a reconciled line **unreconciles** the entry, undoing a
+        bank reconciliation nobody asked to undo. A Peppol bill that has just
+        arrived is in draft anyway.
+        """
         self.ensure_one()
         return self.state == 'draft'
 
     def _dfd_check_writable(self):
-        # Odoo ne protège PAS analytic_distribution par les dates de
-        # verrouillage : _get_lock_date_protected_fields() ne liste que
-        # balance, tax_*, account_id, journal_id, amount_currency,
-        # currency_id et partner_id. Écrire l'analytique d'une pièce postée
-        # dans une période close passerait donc sans un mot, et
-        # _inverse_analytic_distribution régénérerait les account.analytic.line
-        # au passage. Le garde-fou est posé ici, faute d'en trouver un en face.
+        """Refuse a posted entry sitting in a locked accounting period.
+
+        Odoo does **not** protect ``analytic_distribution`` with the lock
+        dates: ``_get_lock_date_protected_fields()`` lists only ``balance``,
+        ``tax_line_id``, ``tax_ids``, ``tax_tag_ids``, ``account_id``,
+        ``journal_id``, ``amount_currency``, ``currency_id`` and
+        ``partner_id``. Rewriting the analytic distribution of a posted entry
+        in a closed period would therefore go through without a word, and
+        ``_inverse_analytic_distribution`` would regenerate the analytic
+        entries along the way.
+
+        The guard is placed here for want of one on the other side. Note the
+        consequence: this button is **stricter than Odoo's own list
+        multi-edit**, which still lets it through. The two accounting fields
+        above need no such guard -- the lock dates already protect them.
+        """
         self.filtered(lambda move: move.state == 'posted')._check_fiscal_lock_dates()
