@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Orders do carry the header field: no digitisation intercepts the
+         focus here, and at ordering time you already know which site you are
+         buying for. The button stays visible even when the field is empty —
+         hiding it made the whole feature undiscoverable. -->
     <record id="purchase_order_form_dfd_analytic" model="ir.ui.view">
         <field name="name">purchase.order.form.dfd.analytic.bulk</field>
         <field name="model">purchase.order</field>

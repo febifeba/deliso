@@ -6,8 +6,11 @@ class PurchaseOrder(models.Model):
     _name = 'purchase.order'
     _inherit = ['purchase.order', 'dfd.analytic.bulk.header.mixin']
 
-    def _dfd_analytic_target_lines(self):
-        # Sur purchase.order.line, display_type ne vaut quelque chose que pour
-        # une section, une sous-section ou une note : une ligne ordinaire n'en
-        # a pas. C'est l'inverse d'account.move.line.
+    def _dfd_target_lines(self):
+        """Ordinary lines only.
+
+        On ``purchase.order.line``, ``display_type`` holds a value only for a
+        section, a subsection or a note: an ordinary line has none. That is
+        the exact opposite of ``account.move.line``.
+        """
         return self.order_line.filtered(lambda line: not line.display_type)

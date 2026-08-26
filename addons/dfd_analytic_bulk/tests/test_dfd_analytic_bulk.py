@@ -8,12 +8,20 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 @tagged('post_install', '-at_install')
 class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
+    """Cover the module against a real chart of accounts.
+
+    Run them with::
+
+        odoo-bin -d <db> -u dfd_analytic_bulk --test-enable \\
+                 --test-tags /dfd_analytic_bulk --stop-after-init
+    """
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Le socle comptable n'ouvre ni la vente ni l'achat : sans ces groupes,
-        # créer une commande lève une AccessError avant tout test utile.
+        # The accounting test rig opens neither sales nor purchases. Without
+        # these groups, creating an order raises AccessError long before any
+        # useful assertion runs.
         cls.env.user.group_ids |= (
             cls.env.ref('analytic.group_analytic_accounting')
             | cls.env.ref('sales_team.group_sale_salesman')
@@ -21,8 +29,8 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         )
 
         cls.plan = cls.env['account.analytic.plan'].create({'name': "Chantiers"})
-        # company_id porte une valeur par défaut ; les chantiers de Deliso sont
-        # partagés entre les six sociétés, donc sans société.
+        # account.analytic.account.company_id carries a default. Deliso shares
+        # its sites across all six companies, so they are created with none.
         cls.site_a = cls.env['account.analytic.account'].create({
             'name': "BULLANGE - LOT 1", 'plan_id': cls.plan.id, 'company_id': False,
         })
@@ -31,12 +39,12 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         })
         cls.dist_a = {str(cls.site_a.id): 100}
         cls.dist_b = {str(cls.site_b.id): 100}
-        # La répartition en pourcentages que Jérôme évoque : 60/40 sur deux
-        # chantiers, ce que la cascade native par project_id ne sait pas faire.
+        # The percentage split the customer asked for: 60/40 across two sites,
+        # which the native project_id cascade cannot express.
         cls.dist_split = {str(cls.site_a.id): 60, str(cls.site_b.id): 40}
 
     # ------------------------------------------------------------------
-    # Aides
+    # Helpers
     # ------------------------------------------------------------------
 
     def _new_bill(self, post=False):
@@ -63,26 +71,25 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         return wizard.action_apply()
 
     # ------------------------------------------------------------------
-    # Le champ d'en-tête : présent sur les commandes, absent des factures
+    # Where the header field lives, and where it must not
     # ------------------------------------------------------------------
 
     def test_invoice_carries_no_header_field(self):
-        # Régression : un champ analytic_distribution en en-tête d'account.move
-        # fait planter l'écran quand account_invoice_extract est installé — le
-        # widget prend le focus, le module de numérisation cherche le champ
-        # dans sa table et lève un TypeError. Éprouvé sur Odoo 19 Enterprise le
-        # 25 août 2026.
+        # Regression guard. An analytic_distribution field in an account.move
+        # header breaks the form whenever account_invoice_extract is
+        # installed: the widget takes focus, the digitisation module looks the
+        # field up in its box mapping and raises a TypeError. Proven against
+        # Odoo 19 Enterprise on 25 August 2026.
         self.assertNotIn('analytic_distribution', self.env['account.move']._fields)
 
     def test_orders_carry_the_header_field(self):
-        # Sur une commande, aucune numérisation n'intercepte le focus, et le
-        # champ a un sens propre : on sait dès la commande pour quel chantier
-        # on achète.
+        # No digitisation intercepts focus on an order, and the field means
+        # something there: at ordering time you know which site you buy for.
         self.assertIn('analytic_distribution', self.env['purchase.order']._fields)
         self.assertIn('analytic_distribution', self.env['sale.order']._fields)
 
     # ------------------------------------------------------------------
-    # Facture : tout passe par l'assistant
+    # Invoices: everything goes through the wizard
     # ------------------------------------------------------------------
 
     def test_invoice_apply_fills_every_product_line(self):
@@ -109,77 +116,81 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             bill._dfd_apply()
 
     # ------------------------------------------------------------------
-    # Compte comptable et taxes : vide = on ne touche pas
+    # General account and taxes: empty means untouched
     # ------------------------------------------------------------------
 
     def test_account_is_applied_to_every_product_line(self):
         bill = self._new_bill()
-        autre_compte = self.company_data['default_account_expense']
-        lignes = self._product_lines(bill)
-        self.assertTrue(any(l.account_id != autre_compte for l in lignes))
+        other_account = self.company_data['default_account_expense']
+        self.assertTrue(any(
+            line.account_id != other_account for line in self._product_lines(bill)
+        ))
 
-        self._apply_via_wizard(bill, self.dist_a, account_id=autre_compte)
+        self._apply_via_wizard(bill, self.dist_a, account_id=other_account)
 
-        for ligne in self._product_lines(bill):
-            self.assertEqual(ligne.account_id, autre_compte)
+        for line in self._product_lines(bill):
+            self.assertEqual(line.account_id, other_account)
 
     def test_taxes_are_applied_to_every_product_line(self):
         bill = self._new_bill()
-        autre_taxe = self.tax_purchase_b
-        self._apply_via_wizard(bill, self.dist_a, tax_ids=autre_taxe)
+        other_tax = self.tax_purchase_b
 
-        for ligne in self._product_lines(bill):
-            self.assertEqual(ligne.tax_ids, autre_taxe)
+        self._apply_via_wizard(bill, self.dist_a, tax_ids=other_tax)
+
+        for line in self._product_lines(bill):
+            self.assertEqual(line.tax_ids, other_tax)
 
     def test_empty_account_and_taxes_change_nothing(self):
         bill = self._new_bill()
-        avant = {
-            ligne.id: (ligne.account_id, ligne.tax_ids)
-            for ligne in self._product_lines(bill)
+        before = {
+            line.id: (line.account_id, line.tax_ids)
+            for line in self._product_lines(bill)
         }
 
         self._apply_via_wizard(bill, self.dist_a)
 
-        for ligne in self._product_lines(bill):
-            compte, taxes = avant[ligne.id]
-            self.assertEqual(ligne.account_id, compte)
-            self.assertEqual(ligne.tax_ids, taxes)
+        for line in self._product_lines(bill):
+            account, taxes = before[line.id]
+            self.assertEqual(line.account_id, account)
+            self.assertEqual(line.tax_ids, taxes)
 
     def test_account_alone_leaves_the_analytic_alone(self):
-        # C'est tout l'intérêt de la règle « vide = on ne touche pas » :
-        # corriger un compte sans défaire une ventilation.
+        # The whole point of "empty means untouched": fixing an account
+        # without undoing a hand-made allocation.
         bill = self._new_bill()
-        lignes = self._product_lines(bill)
-        lignes[0].analytic_distribution = self.dist_b
+        lines = self._product_lines(bill)
+        lines[0].analytic_distribution = self.dist_b
+        expense = self.company_data['default_account_expense']
 
         wizard = self._wizard_for(bill)
-        wizard.account_id = self.company_data['default_account_expense']
+        wizard.account_id = expense
         wizard.action_apply()
 
-        self.assertEqual(lignes[0].analytic_distribution, self.dist_b)
-        self.assertFalse(lignes[1].analytic_distribution)
-        for ligne in lignes:
-            self.assertEqual(ligne.account_id, self.company_data['default_account_expense'])
+        self.assertEqual(lines[0].analytic_distribution, self.dist_b)
+        self.assertFalse(lines[1].analytic_distribution)
+        for line in lines:
+            self.assertEqual(line.account_id, expense)
 
-    def test_account_leaves_tax_and_payable_lines_alone(self):
+    def test_account_leaves_the_payable_counterpart_alone(self):
         bill = self._new_bill()
-        autre_compte = self.company_data['default_account_expense']
-        autres = bill.line_ids.filtered(lambda l: l.display_type != 'product')
-        avant = {ligne.id: ligne.account_id for ligne in autres}
-        self.assertTrue(avant)
+        counterparts = bill.line_ids.filtered(lambda line: line.display_type == 'payment_term')
+        before = {line.id: line.account_id for line in counterparts}
+        self.assertTrue(before)
 
-        self._apply_via_wizard(bill, self.dist_a, account_id=autre_compte)
+        self._apply_via_wizard(
+            bill, self.dist_a, account_id=self.company_data['default_account_expense'],
+        )
 
-        for ligne in bill.line_ids.filtered(lambda l: l.display_type == 'payment_term'):
-            self.assertEqual(ligne.account_id, avant[ligne.id])
+        for line in bill.line_ids.filtered(lambda l: l.display_type == 'payment_term'):
+            self.assertEqual(line.account_id, before[line.id])
 
     # ------------------------------------------------------------------
-    # Compte et taxes : brouillon seulement
+    # General account and taxes: draft only
     # ------------------------------------------------------------------
 
     def test_posted_invoice_refuses_account_and_taxes(self):
-        # Odoo refuse de toute façon de modifier les taxes d'une pièce
-        # comptabilisée, et changer le compte d'une ligne lettrée la délettre.
+        # Odoo refuses to change the taxes of a posted journal item anyway,
+        # and changing the account of a reconciled line unreconciles it.
         bill = self._new_bill(post=True)
         self.assertFalse(bill._dfd_supports_accounting_fields())
         with self.assertRaises(UserError):
@@ -189,8 +200,7 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         self.assertTrue(self._new_bill()._dfd_supports_accounting_fields())
 
     def test_orders_refuse_account_and_taxes(self):
-        # Une ligne de commande n'a pas de compte comptable : il n'apparaît
-        # qu'à la facturation.
+        # An order line has no general account: it only appears at invoicing.
         order = self.env['purchase.order'].create({
             'partner_id': self.partner_a.id,
             'order_line': [Command.create({'product_id': self.product_a.id, 'product_qty': 1})],
@@ -209,6 +219,10 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         wizard = self._wizard_for(self._new_bill())
         self.assertTrue(wizard.show_accounting_fields)
         self.assertEqual(wizard.tax_type, 'purchase')
+
+    # ------------------------------------------------------------------
+    # Scope: only fill the empty lines, or overwrite them all
+    # ------------------------------------------------------------------
 
     def test_mode_empty_leaves_manual_allocations_alone(self):
         bill = self._new_bill()
@@ -242,7 +256,7 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             self.assertEqual(line.analytic_distribution, self.dist_a)
 
     # ------------------------------------------------------------------
-    # Ce que le bouton ne doit pas toucher
+    # Lines the button must never touch
     # ------------------------------------------------------------------
 
     def test_tax_and_payable_lines_are_left_untouched(self):
@@ -250,7 +264,7 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         self._apply_via_wizard(bill, self.dist_a)
 
         others = bill.line_ids.filtered(lambda line: line.display_type != 'product')
-        self.assertTrue(others, "le jeu d'essai doit produire des lignes de taxe et une contrepartie")
+        self.assertTrue(others, "the fixture must produce tax lines and a counterpart")
         for line in others:
             self.assertFalse(line.analytic_distribution)
 
@@ -258,8 +272,9 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
         bill = self._new_bill()
         bill.write({'invoice_line_ids': [
             Command.create({'display_type': 'line_section', 'name': "Gros oeuvre"}),
-            Command.create({'display_type': 'line_note', 'name': "Vu avec le chef de chantier"}),
+            Command.create({'display_type': 'line_note', 'name': "Checked with the site manager"}),
         ]})
+
         self._apply_via_wizard(bill, self.dist_a)
 
         decorative = bill.line_ids.filtered(
@@ -270,19 +285,19 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             self.assertFalse(line.analytic_distribution)
 
     # ------------------------------------------------------------------
-    # Période verrouillée
+    # Locked accounting periods
     # ------------------------------------------------------------------
 
     def test_locked_period_is_refused(self):
         bill = self._new_bill(post=True)
         bill.company_id.fiscalyear_lock_date = fields.Date.add(bill.date, days=1)
-        # Refusé dès le bouton : l'assistant ne s'ouvre même pas.
+        # Refused by the button itself: the wizard does not even open.
         with self.assertRaises(UserError):
             bill.action_dfd_apply_analytic()
 
     def test_draft_move_in_locked_period_is_allowed(self):
-        # Une pièce non postée n'est pas encore de la comptabilité : Odoo la
-        # laisse passer, le module aussi.
+        # A draft entry is not accounting yet: Odoo lets it through, and so
+        # does the module.
         bill = self._new_bill()
         bill.company_id.fiscalyear_lock_date = fields.Date.add(bill.date, days=1)
 
@@ -292,13 +307,13 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             self.assertEqual(line.analytic_distribution, self.dist_a)
 
     # ------------------------------------------------------------------
-    # Multi-sociétés
+    # Multi-company
     # ------------------------------------------------------------------
 
     def test_analytic_account_of_another_company_is_refused(self):
         other_company = self.env['res.company'].create({'name': "V. DELHEZ"})
         foreign_site = self.env['account.analytic.account'].create({
-            'name': "CHANTIER D'EN FACE", 'plan_id': self.plan.id,
+            'name': "SITE NEXT DOOR", 'plan_id': self.plan.id,
             'company_id': other_company.id,
         })
         bill = self._new_bill()
@@ -306,15 +321,17 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             self._apply_via_wizard(bill, {str(foreign_site.id): 100})
 
     def test_analytic_account_without_company_is_allowed(self):
-        # Chez Deliso les 81 chantiers sont partagés : pas de company_id.
+        # Deliso shares its 81 sites across companies: no company_id.
         self.assertFalse(self.site_a.company_id)
         bill = self._new_bill()
+
         self._apply_via_wizard(bill, self.dist_a)
+
         for line in self._product_lines(bill):
             self.assertEqual(line.analytic_distribution, self.dist_a)
 
     # ------------------------------------------------------------------
-    # Commandes : l'en-tête suffit, display_type s'y lit à l'envers
+    # Orders: display_type reads the other way round
     # ------------------------------------------------------------------
 
     def test_purchase_order_applies_from_the_header_without_a_wizard(self):
@@ -322,16 +339,16 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             'partner_id': self.partner_a.id,
             'order_line': [
                 Command.create({'product_id': self.product_a.id, 'product_qty': 1}),
-                Command.create({'display_type': 'line_section', 'name': "Toiture", 'product_qty': 0}),
+                Command.create({'display_type': 'line_section', 'name': "Roofing", 'product_qty': 0}),
                 Command.create({'product_id': self.product_b.id, 'product_qty': 2}),
-                Command.create({'display_type': 'line_note', 'name': "Livraison lundi", 'product_qty': 0}),
+                Command.create({'display_type': 'line_note', 'name': "Delivery on Monday", 'product_qty': 0}),
             ],
         })
         order.analytic_distribution = self.dist_a
 
         action = order.action_dfd_apply_analytic()
 
-        # Rien n'était imputé : on écrit directement, sans assistant.
+        # Nothing was allocated: written straight away, no wizard.
         self.assertEqual(action['tag'], 'display_notification')
         for line in order.order_line:
             if line.display_type:
@@ -352,17 +369,17 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
 
         wizard = self._wizard_for(order)
 
-        # La distribution de l'en-tête arrive déjà remplie dans l'assistant.
+        # The header distribution reaches the wizard already filled in.
         self.assertEqual(wizard.analytic_distribution, self.dist_a)
         self.assertEqual(wizard.conflict_count, 1)
         wizard.action_apply()
+
         self.assertEqual(order.order_line[0].analytic_distribution, self.dist_b)
         self.assertEqual(order.order_line[1].analytic_distribution, self.dist_a)
 
     def test_purchase_order_without_header_opens_the_wizard(self):
-        # Le bouton s'affiche même en-tête vide : le masquer rendait la
-        # fonction invisible à qui ne la connaissait pas déjà. Sans
-        # distribution à recopier, l'assistant la demande.
+        # The button shows even on an empty header: hiding it made the
+        # feature undiscoverable to anyone who did not already know it.
         order = self.env['purchase.order'].create({
             'partner_id': self.partner_a.id,
             'order_line': [
@@ -387,7 +404,7 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
             'partner_id': self.partner_a.id,
             'order_line': [
                 Command.create({'product_id': self.product_a.id, 'product_uom_qty': 1}),
-                Command.create({'display_type': 'line_note', 'name': "Devis validé par téléphone", 'product_uom_qty': 0}),
+                Command.create({'display_type': 'line_note', 'name': "Agreed by phone", 'product_uom_qty': 0}),
             ],
         })
         order.analytic_distribution = self.dist_a
@@ -401,7 +418,7 @@ class TestDfdAnalyticBulk(AccountTestInvoicingCommon):
                 self.assertEqual(line.analytic_distribution, self.dist_a)
 
     # ------------------------------------------------------------------
-    # L'assistant refuse ce que l'écran cache
+    # The wizard refuses what the screen hides
     # ------------------------------------------------------------------
 
     def test_wizard_refuses_an_unlisted_model(self):

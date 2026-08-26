@@ -10,7 +10,19 @@ Cible : **Odoo 19.0**, on-premise chez Burniaux (`test.deliso.burniaux.com`).
 
 Préfixe `dfd_` : DorFAdoo, l'éditeur.
 
+## Documentation
+
+| Document | Pour qui |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | technique — architecture, décisions, points d'extension, migration |
+| [`docs/guide-utilisateur.md`](docs/guide-utilisateur.md) | le client — comment se servir du bouton |
+| [`docs/rapport-analytique-chantiers.md`](docs/rapport-analytique-chantiers.md) | le tableau de bord de Jérôme — pourquoi il n'est pas consolidé, et comment le corriger sans code |
+| [`addons/dfd_analytic_bulk/README.md`](addons/dfd_analytic_bulk/README.md) | ce que fait le module, et ce qui était déjà natif |
+
 ## Développer
 
 Un Odoo 19 local en deux commandes : voir [`docker/README.md`](docker/README.md).
+
+Le code, les commentaires et les chaînes source sont en **anglais** ; la
+documentation et les traductions sont en **français**.
 

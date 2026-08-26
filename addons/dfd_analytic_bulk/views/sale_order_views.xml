@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Same reasoning as the purchase order form. -->
     <record id="view_order_form_dfd_analytic" model="ir.ui.view">
         <field name="name">sale.order.form.dfd.analytic.bulk</field>
         <field name="model">sale.order</field>

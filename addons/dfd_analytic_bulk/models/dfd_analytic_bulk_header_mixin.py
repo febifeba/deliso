@@ -3,16 +3,16 @@ from odoo import models
 
 
 class DfdAnalyticBulkHeaderMixin(models.AbstractModel):
-    """Le champ de distribution analytique posé en en-tête du document.
+    """The analytic distribution field, carried in the document header.
 
-    Réservé aux modèles où le widget peut prendre le focus sans réveiller le
-    module de numérisation des factures — donc les commandes, pas les
-    factures. Voir ``dfd.analytic.bulk.mixin`` pour le détail de la panne.
+    Reserved for the models where the widget can take focus without waking
+    the invoice digitisation module -- so orders, never invoices. See
+    ``dfd.analytic.bulk.mixin`` for the details of that crash.
 
-    Sur une commande, ce champ a en plus un sens propre : au moment de passer
-    commande, on sait pour quel chantier on achète, et ça se conserve. Il
-    complète ``project_id`` sans le remplacer — laissé vide, le comportement
-    natif reprend la main.
+    On an order the field also carries meaning of its own: at ordering time
+    you already know which site you are buying for, and the field keeps it. It
+    complements ``project_id`` rather than replacing it -- left empty, Odoo's
+    native cascade takes over again.
     """
 
     _name = 'dfd.analytic.bulk.header.mixin'
@@ -20,11 +20,13 @@ class DfdAnalyticBulkHeaderMixin(models.AbstractModel):
     _description = "Header Analytic Distribution"
 
     def _compute_analytic_distribution(self):
-        # ``analytic.mixin`` déclare le champ calculé-modifiable et laisse aux
-        # modèles concrets le soin de le remplir. Ici il n'y a rien à déduire :
-        # un en-tête ne se devine pas, il se saisit. On réassigne la valeur
-        # existante pour que le calcul soit défini — c'est ce que fait déjà
-        # ``purchase.order.line._compute_analytic_distribution``.
+        """Define the compute ``analytic.mixin`` leaves to concrete models.
+
+        There is nothing to infer here: a header is not guessed, it is typed.
+        Reassigning the existing value keeps the compute well defined -- the
+        same thing ``purchase.order.line._compute_analytic_distribution``
+        does for the lines it does not touch.
+        """
         for record in self:
             record.analytic_distribution = record.analytic_distribution
 

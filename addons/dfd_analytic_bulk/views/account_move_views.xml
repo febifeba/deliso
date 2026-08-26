@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Pas de champ analytic_distribution en en-tête de facture : le widget
-         se donne le focus en se rendant, et account_invoice_extract plante en
-         cherchant ce champ inconnu dans sa table de correspondance. Le bouton
-         ouvre l'assistant, qui porte le champ dans sa propre fenêtre. -->
+    <!-- No analytic_distribution field in the invoice header: the widget
+         focuses itself when it renders, and account_invoice_extract crashes
+         looking that unknown field up in its box mapping. The button opens
+         the wizard, which carries the field in its own dialog. See
+         dfd.analytic.bulk.mixin for the trace and the proof. -->
     <record id="view_move_form_dfd_analytic" model="ir.ui.view">
         <field name="name">account.move.form.dfd.analytic.bulk</field>
         <field name="model">account.move</field>

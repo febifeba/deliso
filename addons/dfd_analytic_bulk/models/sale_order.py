@@ -6,7 +6,6 @@ class SaleOrder(models.Model):
     _name = 'sale.order'
     _inherit = ['sale.order', 'dfd.analytic.bulk.header.mixin']
 
-    def _dfd_analytic_target_lines(self):
-        # Même lecture que sur purchase.order.line : pas de display_type sur
-        # une ligne ordinaire.
+    def _dfd_target_lines(self):
+        """Ordinary lines only -- same reading as ``purchase.order.line``."""
         return self.order_line.filtered(lambda line: not line.display_type)
