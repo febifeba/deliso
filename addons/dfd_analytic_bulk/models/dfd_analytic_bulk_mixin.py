@@ -237,7 +237,7 @@ class DfdAnalyticBulkMixin(models.AbstractModel):
         })
         return {
             'type': 'ir.actions.act_window',
-            'name': _("Allocate lines to analytic accounts"),
+            'name': _("Apply to the lines"),
             'res_model': 'dfd.analytic.bulk.apply',
             'res_id': wizard.id,
             'view_mode': 'form',

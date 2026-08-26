@@ -26,8 +26,8 @@ msgstr "Distribution analytique en en-tête"
 
 #. module: dfd_analytic_bulk
 #: model:ir.model,name:dfd_analytic_bulk.model_dfd_analytic_bulk_apply
-msgid "Allocate Lines to Analytic Accounts"
-msgstr "Imputer les lignes aux comptes analytiques"
+msgid "Apply to Document Lines"
+msgstr "Appliquer aux lignes d'un document"
 
 #. module: dfd_analytic_bulk
 #: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__analytic_distribution
@@ -97,8 +97,8 @@ msgstr "Ces comptes analytiques appartiennent à une autre société que %(compa
 #. odoo-python
 #: code:addons/dfd_analytic_bulk/models/dfd_analytic_bulk_mixin.py:0
 #: model_terms:ir.ui.view,arch_db:dfd_analytic_bulk.dfd_analytic_bulk_apply_form
-msgid "Allocate lines to analytic accounts"
-msgstr "Imputer les lignes aux comptes analytiques"
+msgid "Apply to the lines"
+msgstr "Appliquer aux lignes"
 
 #. module: dfd_analytic_bulk
 #. odoo-python

@@ -19,7 +19,7 @@ class DfdAnalyticBulkApply(models.TransientModel):
 
     _name = 'dfd.analytic.bulk.apply'
     _inherit = ['analytic.mixin']
-    _description = "Allocate Lines to Analytic Accounts"
+    _description = "Apply to Document Lines"
 
     # --- the document being worked on -------------------------------------
     res_model = fields.Char(string="Document Model", required=True, readonly=True)

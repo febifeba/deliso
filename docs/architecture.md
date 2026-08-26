@@ -414,3 +414,4 @@ La suite de tests est le filet : elle attrape ces huit points.
 | 19.0.1.3.2 | idem pour le titre du formulaire |
 | 19.0.1.4.0 | `account.analytic.line.move_id` — la colonne stockée sans laquelle un tableau croisé ne peut pas regrouper par facture |
 | 19.0.1.5.0 | la poubelle : vider les lignes d'une facture en un clic |
+| 19.0.1.5.1 | l'assistant s'appelle « Appliquer aux lignes » — il ne fait plus que de l'analytique |

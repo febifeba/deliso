@@ -2,7 +2,7 @@
 {
     "name": "dFd Analytic Bulk",
     "summary": "Act on every line of a document at once: analytic distribution, general account, taxes, or emptying the lines",
-    "version": "19.0.1.5.0",
+    "version": "19.0.1.5.1",
     "category": "Accounting",
     "author": "dFd",
     "license": "LGPL-3",

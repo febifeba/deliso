@@ -4,7 +4,7 @@
         <field name="name">dfd.analytic.bulk.apply.form</field>
         <field name="model">dfd.analytic.bulk.apply</field>
         <field name="arch" type="xml">
-            <form string="Allocate lines to analytic accounts">
+            <form string="Apply to the lines">
                 <field name="res_model" invisible="1"/>
                 <field name="res_id" invisible="1"/>
                 <field name="line_count" invisible="1"/>
