@@ -37,6 +37,11 @@ msgid "Analytic Distribution"
 msgstr "Distribution analytique"
 
 #. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_account_analytic_line__move_id
+msgid "Journal Entry"
+msgstr "Pièce comptable"
+
+#. module: dfd_analytic_bulk
 #: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__message
 msgid "Message"
 msgstr "Message"

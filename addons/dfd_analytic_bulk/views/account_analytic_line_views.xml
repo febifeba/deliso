@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The stored move_id has no screen of its own: it exists for the pivot
+         table of the site dashboard. One optional column, hidden by default,
+         is enough to check it from the interface, and to group the analytic
+         items by entry without building a report. -->
+    <record id="view_account_analytic_line_tree_dfd" model="ir.ui.view">
+        <field name="name">account.analytic.line.list.dfd.move</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_line_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_id']" position="after">
+                <field name="move_id" optional="hide" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
