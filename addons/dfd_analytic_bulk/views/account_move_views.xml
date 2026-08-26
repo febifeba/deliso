@@ -17,6 +17,18 @@
                         groups="analytic.group_analytic_accounting"
                         invisible="move_type == 'entry'"/>
             </xpath>
+            <!-- One column to point at the lines. Odoo offers no selection
+                 checkbox inside a list embedded in a form, so this is a real
+                 field. Optional and hidden: whoever needs it turns it on
+                 once from the column selector, and nobody else ever sees it.
+                 Reserved to the same group as the button, so it does not
+                 even appear in the selector of those who cannot use it. -->
+            <xpath expr="//page[@id='invoice_tab']//list[@name='journal_items']/field[@name='sequence']" position="after">
+                <field name="dfd_selected"
+                       optional="hide"
+                       width="60px"
+                       groups="analytic.group_analytic_accounting"/>
+            </xpath>
             <!-- The bin sits above the list, where the lines are, not in the
                  header: it is a gesture on the tab, and it must be read next
                  to what it empties. Hidden on a posted document and on an

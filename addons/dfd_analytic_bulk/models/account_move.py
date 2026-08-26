@@ -97,3 +97,8 @@ class AccountMove(models.Model):
                 'next': {'type': 'ir.actions.act_window_close'},
             },
         }
+
+
+class AccountMoveLine(models.Model):
+    _name = 'account.move.line'
+    _inherit = ['account.move.line', 'dfd.analytic.bulk.line.mixin']

@@ -37,19 +37,20 @@ addons/dfd_analytic_bulk/
 ├── __manifest__.py                       dépend de account, purchase,
 │                                         sale_management, analytic
 ├── models/
-│   ├── dfd_analytic_bulk_mixin.py        (261 l.) le cœur, sans aucun champ
+│   ├── dfd_analytic_bulk_mixin.py        (293 l.) le cœur, sans aucun champ
 │   ├── dfd_analytic_bulk_header_mixin.py  (35 l.) ajoute le champ d'en-tête
-│   ├── account_move.py                    (99 l.) factures, et la poubelle
-│   ├── purchase_order.py                  (16 l.) commandes d'achat
-│   ├── sale_order.py                      (11 l.) commandes de vente
+│   ├── dfd_analytic_bulk_line_mixin.py    (38 l.) la case à cocher des lignes
+│   ├── account_move.py                   (104 l.) factures, et la poubelle
+│   ├── purchase_order.py                  (21 l.) commandes d'achat
+│   ├── sale_order.py                      (16 l.) commandes de vente
 │   └── account_analytic_line.py           (37 l.) move_id, pour le pivot
 ├── wizard/
-│   ├── dfd_analytic_bulk_apply.py        (144 l.) l'assistant
+│   ├── dfd_analytic_bulk_apply.py        (163 l.) l'assistant
 │   └── dfd_analytic_bulk_apply_views.xml
 ├── views/                                 un fichier par modèle
 ├── security/ir.model.access.csv           accès au modèle transitoire
 ├── i18n/fr.po                             traductions
-└── tests/test_dfd_analytic_bulk.py       (559 l.) 38 tests
+└── tests/test_dfd_analytic_bulk.py       (650 l.) 45 tests
 ```
 
 Le rapport tests / code est volontairement supérieur à 1 : la logique touche
@@ -252,6 +253,31 @@ désinstallant réellement le module sur une copie du banc le 26 août 2026.
 `ir.model.fields._drop_column()` exécute un `ALTER TABLE ... DROP COLUMN` pour
 tout champ stocké dont le module s'en va.
 
+### La sélection de lignes : un champ, faute de cases natives
+
+Les cases de sélection d'une vue liste **n'existent pas dans une liste
+imbriquée d'un formulaire.** `ListRenderer.hasSelectors` les lit dans
+`allowSelectors`, dont la valeur par défaut est `False` ; seuls le contrôleur de
+liste (`list_controller.js`) et la fenêtre de choix d'enregistrements
+(`select_create_dialog.js`) la passent à `True`. Le champ x2many, jamais. Même
+mécanique pour `multi_edit`, qui vient de `archInfo` du contrôleur de liste.
+Dans une facture ouverte, il n'y a donc **rien à cocher et rien à
+multi-éditer** : la modification multiple d'Odoo n'est atteignable que par les
+écritures comptables, en plein écran, ce qui n'est pas un chemin d'encodage.
+
+D'où `dfd.analytic.bulk.line.mixin`, un seul champ `dfd_selected`, hérité par
+`account.move.line`, `purchase.order.line` et `sale.order.line`.
+
+`_dfd_lines_to_write()` est la seule porte : lignes cochées s'il y en a, toutes
+les lignes éligibles sinon. `_dfd_target_lines()` continue de dire ce qui est
+*éligible* — une section cochée reste ignorée, l'un ne remplace pas l'autre.
+
+La colonne est `optional="hide"` et porte le groupe du bouton : elle n'apparaît
+même pas dans le sélecteur de colonnes de qui ne peut pas s'en servir.
+
+Les cases sont **vidées après écriture**, et `copy=False` les empêche de suivre
+une duplication.
+
 ### La poubelle : où elle est, et ce qu'elle emporte
 
 `action_dfd_clear_lines()` supprime tout `invoice_line_ids` — lignes de
@@ -361,7 +387,7 @@ odoo-bin -d <base> -u dfd_analytic_bulk \
 Verdict attendu :
 
 ```
-0 failed, 0 error(s) of 38 tests
+0 failed, 0 error(s) of 45 tests
 ```
 
 Un Odoo 19 local en deux commandes : voir [`docker/README.md`](../docker/README.md).
@@ -415,3 +441,4 @@ La suite de tests est le filet : elle attrape ces huit points.
 | 19.0.1.4.0 | `account.analytic.line.move_id` — la colonne stockée sans laquelle un tableau croisé ne peut pas regrouper par facture |
 | 19.0.1.5.0 | la poubelle : vider les lignes d'une facture en un clic |
 | 19.0.1.5.1 | l'assistant s'appelle « Appliquer aux lignes » — il ne fait plus que de l'analytique |
+| 19.0.1.6.0 | sélection de lignes : deux chantiers sur une même facture, en deux passes |

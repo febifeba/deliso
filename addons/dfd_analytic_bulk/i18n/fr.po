@@ -42,6 +42,50 @@ msgid "Journal Entry"
 msgstr "Pièce comptable"
 
 #. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_account_move_line__dfd_selected
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_purchase_order_line__dfd_selected
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_sale_order_line__dfd_selected
+msgid "Select"
+msgstr "Sélectionner"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,help:dfd_analytic_bulk.field_account_move_line__dfd_selected
+#: model:ir.model.fields,help:dfd_analytic_bulk.field_purchase_order_line__dfd_selected
+#: model:ir.model.fields,help:dfd_analytic_bulk.field_sale_order_line__dfd_selected
+msgid ""
+"Tick the lines to work on, then press the button. Nothing ticked means every"
+" line of the document."
+msgstr ""
+"Cochez les lignes à traiter, puis appuyez sur le bouton. Rien de coché veut "
+"dire toutes les lignes du document."
+
+#. module: dfd_analytic_bulk
+#: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__on_selection
+msgid "On a Selection"
+msgstr "Sur une sélection"
+
+#. module: dfd_analytic_bulk
+#: model:ir.model,name:dfd_analytic_bulk.model_dfd_analytic_bulk_line_mixin
+msgid "Line Selection for Bulk Allocation"
+msgstr "Sélection de lignes pour l'imputation en masse"
+
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
+msgid ""
+"%(conflicts)s of the %(total)s selected lines are already allocated. What "
+"should be done with them?"
+msgstr ""
+"%(conflicts)s des %(total)s lignes sélectionnées sont déjà imputées. Qu'en "
+"fait-on ?"
+
+#. module: dfd_analytic_bulk
+#. odoo-python
+#: code:addons/dfd_analytic_bulk/wizard/dfd_analytic_bulk_apply.py:0
+msgid "This will be applied to the %(total)s lines you ticked, and to them only."
+msgstr "Ce sera appliqué aux %(total)s lignes que vous avez cochées, à elles seules."
+
+#. module: dfd_analytic_bulk
 #: model:ir.model.fields,field_description:dfd_analytic_bulk.field_dfd_analytic_bulk_apply__message
 msgid "Message"
 msgstr "Message"
